@@ -12,9 +12,11 @@ def extract_text_from_pdf(pdf_path):
         cleaned_text = cleaned_text.strip()
         
         print(cleaned_text)
+        with open("extracted_text.txt", "w", encoding="utf-8") as text_file:
+            text_file.write(cleaned_text)
     except Exception as e:
         print(e)
 
-#Use your own path. The pdf is provided in the file. :)
-pdf_path = input("Enter the full path to the PDF file: ")
+
+pdf_path = "g:/projects/mini project/Contextual-Content-Creation-Application-/backend/pdf_to_text/testfile.pdf"
 extract_text_from_pdf(pdf_path)
