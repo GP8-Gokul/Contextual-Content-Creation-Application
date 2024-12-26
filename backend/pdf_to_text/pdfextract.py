@@ -3,6 +3,7 @@ import io
 from PIL import Image
 import re
 import pdfplumber as pdfp
+import os
 
 def extract_images_and_text_from_pdf(pdf_path, output_folder):
     try:
@@ -14,8 +15,10 @@ def extract_images_and_text_from_pdf(pdf_path, output_folder):
         cleaned_text = re.sub(r"[^a-zA-Z0-9\s.,!?'-]", " ", cleaned_text)
         cleaned_text = cleaned_text.strip()
         print(cleaned_text)
-        with open("extracted_text.txt", "w", encoding="utf-8") as text_file:
+        text_file_path = os.path.join(text_output_folder, "extracted_text.txt")
+        with open(text_file_path, "w", encoding="utf-8") as text_file:
             text_file.write(cleaned_text)
+
 
         pdf_document = fitz.open(pdf_path)
         for page_number in range(len(pdf_document)):
@@ -41,6 +44,13 @@ def extract_images_and_text_from_pdf(pdf_path, output_folder):
         print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
-    pdf_path = "g:/projects/mini project/Contextual-Content-Creation-Application-/backend/pdf_to_text/testfile.pdf"
-    output_folder = "g:/projects/mini project/Contextual-Content-Creation-Application-/images"
-    extract_images_and_text_from_pdf(pdf_path, output_folder)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
+    pdf_path = os.path.join(script_dir, "testfile.pdf")
+    text_output_folder = os.path.join(script_dir, "text")
+    image_output_folder = os.path.join(script_dir, "images")
+
+    os.makedirs(text_output_folder, exist_ok=True)
+    os.makedirs(image_output_folder, exist_ok=True)
+
+    extract_images_and_text_from_pdf(pdf_path, image_output_folder)
