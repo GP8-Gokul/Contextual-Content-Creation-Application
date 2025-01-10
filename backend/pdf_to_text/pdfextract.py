@@ -4,7 +4,7 @@ from PIL import Image, UnidentifiedImageError
 import re
 import pdfplumber as pdfp
 import os
-
+#bullshit
 def clean_text_repeated_characters(text):
     """
     Removes excessive repeated characters caused by styled fonts (e.g., bold text).
