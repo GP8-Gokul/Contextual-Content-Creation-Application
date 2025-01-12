@@ -2,21 +2,26 @@ from flask import Flask
 import base64
 from flask import request, jsonify
 
+from extraction import extract_content
+
 app = Flask(__name__)
 
 @app.route('/process', methods=['POST'])
 def home():
-    data = request.get_json()
-    pdf_base64 = data.get('pdf_base64')
-    keywords = data.get('keywords')
+    pdf_file = request.files.get('pdf_file')
+    keywords = request.form.getlist('keywords')
 
-    if not pdf_base64 or not keywords:
-        return jsonify({"error": "Missing pdf_base64 or keywords"}), 400
+    if not pdf_file or not keywords:
+        return jsonify({"error": "Missing pdf_file or keywords"}), 400
 
-    pdf_bytes = base64.b64decode(pdf_base64)
-
+    pdf_bytes = pdf_file.read()
     
-    return jsonify({"message": "PDF and keywords received successfully"})
+    extract_content(pdf_bytes, keywords)
+
+    response = jsonify({"message": "PDF and keywords received successfully"})
+    
+
+    return response
 
 if __name__ == '__main__':
     app.run(debug=True)
