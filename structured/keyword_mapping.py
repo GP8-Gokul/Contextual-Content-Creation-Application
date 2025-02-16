@@ -64,6 +64,7 @@ def extract_selected_content(document_data, selectedheaders, unselectedheaders):
 
 
 filtered_content = extract_selected_content(classified_data, selectedheaders, unselectedheaders)
-
+'''
 import pprint
 pprint.pprint(filtered_content)
+'''
