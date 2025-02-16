@@ -1,4 +1,5 @@
 import 'package:cccapp/screens/input_screen.dart';
+import 'package:cccapp/screens/login_screen.dart';
 import 'package:cccapp/screens/main_screen.dart';
 import 'package:cccapp/screens/output_screen.dart';
 import 'package:flutter/material.dart';
@@ -19,11 +20,12 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       routes: {
+        LoginScreen.routeName: (context) => const LoginScreen(),
         MainScreen.routeName: (context) => const MainScreen(),
         InputScreen.routeName: (context) => const InputScreen(),
         OutputScreen.routeName: (context) => const OutputScreen(),
       },
-      initialRoute: MainScreen.routeName,
+      initialRoute: LoginScreen.routeName,
     );
   }
 }

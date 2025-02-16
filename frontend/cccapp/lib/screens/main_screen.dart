@@ -1,4 +1,6 @@
 import 'package:cccapp/screens/input_screen.dart';
+import 'package:cccapp/widgets/background_image.dart';
+import 'package:cccapp/widgets/custom_appbar.dart';
 import 'package:flutter/material.dart';
 
 class MainScreen extends StatefulWidget {
@@ -12,18 +14,22 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Main Screen'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () {
-            Navigator.pushNamed(context, InputScreen.routeName);
-          },
-          child: const Text('Go to Input Screen'),
+    return Stack(
+      children: [
+        BackgroundImage(imageName: "map"),
+        Scaffold(
+          appBar: CustomAppbar(text: "Main Screen"),
+          body: Center(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.pushNamed(context, InputScreen.routeName);
+              },
+              child: const Text('Go to Input Screen'),
+            ),
+          ),
+          backgroundColor: Colors.transparent,
         ),
-      ),
+      ],
     );
   }
 }
