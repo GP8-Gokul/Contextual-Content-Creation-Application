@@ -25,7 +25,7 @@ class MyApp extends StatelessWidget {
         InputScreen.routeName: (context) => const InputScreen(),
         OutputScreen.routeName: (context) => const OutputScreen(),
       },
-      initialRoute: LoginScreen.routeName,
+      initialRoute: MainScreen.routeName,
     );
   }
 }
