@@ -1,3 +1,5 @@
+!pip install transformers
+
 from transformers import pipeline
 import torch
 import re
@@ -13,7 +15,7 @@ except Exception as e:
 
 def classify_text(fontsize, text, is_bold):
     labels = ["This is a title or heading", "This is body text or content"]
-    
+
     if is_bold:
         return "H"
 
@@ -34,7 +36,8 @@ try:
     if 'data' not in globals():
         raise NameError("Variable 'data' is not defined.")
 
-    for fontsize, text, is_bold in data:
+    for item in data:
+        fontsize, text, is_bold = item  # Unpacking explicitly
         classification = classify_text(fontsize, text, is_bold)
 
         entry = {
@@ -51,6 +54,7 @@ try:
 
 except Exception as e:
     print(f"Error processing data: {e}")
-
+'''
 for item in classified_data:
     print(item)
+'''    

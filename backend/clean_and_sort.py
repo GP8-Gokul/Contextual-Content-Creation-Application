@@ -1,4 +1,4 @@
-import fitz 
+import fitz
 
 def remove_images_and_vectors(input_pdf):
     doc = fitz.open(input_pdf)
@@ -23,7 +23,7 @@ def remove_images_and_vectors(input_pdf):
     return doc
 
 
-def extract_and_sort_text(pdf_path):
+def clean_and_sort():
     doc = remove_images_and_vectors(pdf_path)
     text_lines = []
     
@@ -45,19 +45,3 @@ def extract_and_sort_text(pdf_path):
         text_lines.append(lines)
 
     return text_lines
-
-
-# def save_extracted_text(pdf_path, output_file_path):
-#     extracted_text = extract_and_sort_text(pdf_path)
-#     with open(output_file_path, "w", encoding="utf-8") as output_file:
-#         for pages in extracted_text:
-#             output_file.write(pages)
-#             output_file.write("\n--------------------------------------------\n")
-
-# if __name__ == "__main__":
-
-#     pdf_path = "extraction_works/testfile.pdf"  
-#     output_file_path = "physics.txt"  
-
-#     # Extract and save refined text
-#     save_extracted_text(pdf_path, output_file_path)
