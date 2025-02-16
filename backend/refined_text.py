@@ -1,6 +1,6 @@
 import re
 
-def clean_text(text, max_line_length=80):
+def refined_text_re(text, max_line_length=80):
     cleaned_lines = []
     i = 0
 
