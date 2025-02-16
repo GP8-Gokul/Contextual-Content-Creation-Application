@@ -3,7 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
 class InputScreen extends StatefulWidget {
-  const InputScreen({Key? key}) : super(key: key);
+  const InputScreen({super.key});
   static String routeName = 'input_screen';
 
   @override
