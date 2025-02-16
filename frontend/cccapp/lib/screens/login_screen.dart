@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cccapp/widgets/bg.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -16,10 +17,6 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
-
-  static const Color backgroundStart = Color(0xFF1A1A1A);
-  static const Color backgroundMid = Color(0xFF252525);
-  static const Color backgroundEnd = Color(0xFF2D2D2D);
 
   void _handleLoginPress() {
     if (_usernameController.text.isEmpty) {
@@ -58,38 +55,33 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [backgroundStart, backgroundMid, backgroundEnd],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+      body: Stack(
+        children: [
+          const GradientBackground(),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 500),
+                  firstChild: _buildLogin(),
+                  secondChild: _buildSignup(),
+                  crossFadeState: isLogin
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
                 ),
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 500),
-                firstChild: _buildLogin(),
-                secondChild: _buildSignup(),
-                crossFadeState: isLogin
-                    ? CrossFadeState.showFirst
-                    : CrossFadeState.showSecond,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

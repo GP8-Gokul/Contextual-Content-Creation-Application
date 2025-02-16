@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:cccapp/service/pdf_picker.dart';
+import 'package:cccapp/widgets/bg.dart';
 import 'dart:io';
 
 class InputScreen extends StatefulWidget {
@@ -23,26 +24,6 @@ class _InputScreenState extends State<InputScreen> {
   static const Color backgroundStart = Color(0xFF1A1A1A);
   static const Color backgroundMid = Color(0xFF252525);
   static const Color backgroundEnd = Color(0xFF2D2D2D);
-
-  Future<void> _pickPDF() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['pdf'],
-      );
-
-      if (result != null) {
-        setState(() {
-          _selectedPDF = File(result.files.single.path!);
-          _errorMessage = null;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        _errorMessage = 'Error selecting PDF: ${e.toString()}';
-      });
-    }
-  }
 
   void _addKeyword() {
     String keyword = _keywordController.text.trim();
@@ -93,16 +74,7 @@ class _InputScreenState extends State<InputScreen> {
       body: Stack(
         children: [
           // Fixed position gradient background
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [backgroundStart, backgroundMid, backgroundEnd],
-                stops: [0.0, 0.5, 1.0],
-              ),
-            ),
-          ),
+          const GradientBackground(),
           // Main content layout
           SafeArea(
             child: Column(
@@ -136,7 +108,7 @@ class _InputScreenState extends State<InputScreen> {
                           ],
                         ),
                         child: ElevatedButton.icon(
-                          onPressed: _selectedPDF == null ? _pickPDF : null,
+                          onPressed: _selectedPDF == null ? pickPDF : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
