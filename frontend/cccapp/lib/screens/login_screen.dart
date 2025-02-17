@@ -1,4 +1,9 @@
+import 'package:cccapp/screens/main_screen.dart';
+import 'package:cccapp/service/auth/logout.dart';
 import 'package:flutter/material.dart';
+import 'package:cccapp/widgets/bg.dart';
+import 'package:cccapp/service/auth/login.dart';
+import 'package:cccapp/service/auth/signup.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,33 +17,32 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLogin = true;
   String? _errorMessage;
 
-  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmController = TextEditingController();
 
-  static const Color backgroundStart = Color(0xFF1A1A1A);
-  static const Color backgroundMid = Color(0xFF252525);
-  static const Color backgroundEnd = Color(0xFF2D2D2D);
-
-  void _handleLoginPress() {
-    if (_usernameController.text.isEmpty) {
-      setState(() => _errorMessage = "Username cannot be empty");
+  void _handleLoginPress() async {
+    if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
+      setState(() => _errorMessage = "Enter a valid email");
       return;
     }
     if (_passwordController.text.length < 6) {
       setState(() => _errorMessage = "Password too short");
       return;
     }
+
     setState(() => _errorMessage = null);
-    // TODO: Proceed with login
+
+    String? error =
+        await loginUser(_emailController.text, _passwordController.text);
+    if (error != null) {
+      setState(() => _errorMessage = error);
+    } else {
+      Navigator.pushNamed(context, MainScreen.routeName);
+    }
   }
 
-  void _handleSignupPress() {
-    if (_usernameController.text.isEmpty) {
-      setState(() => _errorMessage = "Username cannot be empty");
-      return;
-    }
+  void _handleSignupPress() async {
     if (_emailController.text.isEmpty || !_emailController.text.contains('@')) {
       setState(() => _errorMessage = "Enter a valid email");
       return;
@@ -51,45 +55,51 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() => _errorMessage = "Passwords do not match");
       return;
     }
+
     setState(() => _errorMessage = null);
-    // TODO: Proceed with signup
+
+    String? error =
+        await signUpUser(_emailController.text, _passwordController.text);
+    if (error != null) {
+      setState(() => _errorMessage = error);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Now you can login.')),
+      );
+      logoutUser();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [backgroundStart, backgroundMid, backgroundEnd],
-            stops: [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (_errorMessage != null)
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+      body: Stack(
+        children: [
+          const GradientBackground(),
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_errorMessage != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      _errorMessage!,
+                      style: const TextStyle(color: Colors.red),
+                    ),
                   ),
+                AnimatedCrossFade(
+                  duration: const Duration(milliseconds: 500),
+                  firstChild: _buildLogin(),
+                  secondChild: _buildSignup(),
+                  crossFadeState: isLogin
+                      ? CrossFadeState.showFirst
+                      : CrossFadeState.showSecond,
                 ),
-              AnimatedCrossFade(
-                duration: const Duration(milliseconds: 500),
-                firstChild: _buildLogin(),
-                secondChild: _buildSignup(),
-                crossFadeState: isLogin
-                    ? CrossFadeState.showFirst
-                    : CrossFadeState.showSecond,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -98,13 +108,17 @@ class _LoginScreenState extends State<LoginScreen> {
     return _AuthCard(
       title: "Login",
       fields: [
-        _buildTextField(_usernameController, "Username"),
+        _buildTextField(_emailController, "Email"),
         _buildTextField(_passwordController, "Password", obscureText: true),
       ],
       buttonText: "Login",
       switchText: "No account? Sign up",
       onActionPressed: _handleLoginPress,
-      onSwitchPressed: () => setState(() => isLogin = false),
+      onSwitchPressed: () {
+        setState(() => isLogin = false);
+        _emailController.clear();
+        _passwordController.clear();
+      },
     );
   }
 
@@ -112,7 +126,6 @@ class _LoginScreenState extends State<LoginScreen> {
     return _AuthCard(
       title: "Signup",
       fields: [
-        _buildTextField(_usernameController, "Username"),
         _buildTextField(_emailController, "Email"),
         _buildTextField(_passwordController, "Password", obscureText: true),
         _buildTextField(_confirmController, "Confirm Password",
@@ -120,8 +133,22 @@ class _LoginScreenState extends State<LoginScreen> {
       ],
       buttonText: "Sign Up",
       switchText: "Have an account? Login",
-      onActionPressed: _handleSignupPress,
-      onSwitchPressed: () => setState(() => isLogin = true),
+      onActionPressed: () async {
+        _handleSignupPress();
+        if (_errorMessage == null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('A verification link has been sent to your email')),
+          );
+        }
+      },
+      onSwitchPressed: () {
+        setState(() => isLogin = true);
+        _emailController.clear();
+        _passwordController.clear();
+        _confirmController.clear();
+      },
     );
   }
 
