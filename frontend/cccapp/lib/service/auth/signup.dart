@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_database/firebase_database.dart';
+import 'dart:developer';
 
 Future<String?> signUpUser(String email, String password) async {
   try {
@@ -12,15 +13,19 @@ Future<String?> signUpUser(String email, String password) async {
     await FirebaseAuth.instance.signOut();
 
     String userId = userCredential.user!.uid;
-    print("Generated User ID: $userId");
+    log("User ID: $userId");
 
-    DatabaseReference ref = FirebaseDatabase.instance.ref("/users");
+    DatabaseReference ref = FirebaseDatabase.instance
+        .refFromURL(
+            "https://contextual-content-creation-default-rtdb.asia-southeast1.firebasedatabase.app/")
+        .child("users/$userId");
+
     await ref.set({
-      userId: true,
+      "createdAt": DateTime.now().toIso8601String(),
     }).then((_) {
-      print("User successfully added to database!");
+      log("User added to database");
     }).catchError((error) {
-      print("Error writing to database: $error");
+      log("Failed to add user: $error");
     });
 
     return "Verification email sent. Please verify your email before logging in.";

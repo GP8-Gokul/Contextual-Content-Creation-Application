@@ -1,2 +1,0 @@
-C:/Users/jugge/myProjects/Contextual-Content-Creation-Application-/frontend/cccapp/android/app/.cxx/Debug/446a72j6/x86/CMakeFiles/edit_cache.dir
-C:/Users/jugge/myProjects/Contextual-Content-Creation-Application-/frontend/cccapp/android/app/.cxx/Debug/446a72j6/x86/CMakeFiles/rebuild_cache.dir
