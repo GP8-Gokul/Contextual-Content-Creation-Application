@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:cccapp/service/pdf_picker.dart';
 import 'package:cccapp/widgets/bg.dart';
@@ -23,7 +25,6 @@ class _InputScreenState extends State<InputScreen> {
   static const Color lightPurple = Color(0xFFE1BEE7);
   static const Color backgroundStart = Color(0xFF1A1A1A);
   static const Color backgroundMid = Color(0xFF252525);
-  static const Color backgroundEnd = Color(0xFF2D2D2D);
 
   void _addKeyword() {
     String keyword = _keywordController.text.trim();
@@ -60,7 +61,14 @@ class _InputScreenState extends State<InputScreen> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: Colors.transparent,
+        backgroundColor: darkPurple,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          color: Colors.white,
+          onPressed: () {
+            Navigator.pop(context, 'main_screen');
+          },
+        ),
         title: const Text(
           'PDF Upload with Keywords',
           style: TextStyle(
@@ -384,8 +392,8 @@ class _InputScreenState extends State<InputScreen> {
                     child: ElevatedButton(
                       onPressed: (_selectedPDF != null && _keywords.isNotEmpty)
                           ? () {
-                              print('PDF: ${_selectedPDF!.path}');
-                              print('Keywords: $_keywords');
+                              log('PDF: ${_selectedPDF!.path}');
+                              log('Keywords: $_keywords');
                             }
                           : null,
                       style: ElevatedButton.styleFrom(

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class GradientBackground extends StatelessWidget {
-  const GradientBackground({Key? key}) : super(key: key);
+  const GradientBackground({super.key});
 
   static const Color backgroundStart = Color(0xFF1A1A1A);
   static const Color backgroundMid = Color(0xFF252525);
