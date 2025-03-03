@@ -1,4 +1,5 @@
 from transformers import pipeline
+import json
 
 def keyword_content_mapping(chunks, keywords):
     keyword_content = {keyword: [] for keyword in keywords}
@@ -16,7 +17,7 @@ def keyword_content_mapping(chunks, keywords):
 
 def main():
     
-    keywords = ["corrosion", "combination reaction", "displacement reaction"]
+    keywords = ["corrosion", "combination reaction"]
 
     with open("interim/cleaned.txt", "r", encoding="utf-8") as file:
         content = file.read().strip()
@@ -36,10 +37,11 @@ def main():
             text_file.write("\n")
 
     # Print results
-    for keyword, texts in keyword_content.items():
-        print(f"\n🔹 **Keyword: {keyword}**")
-        for text in texts:
-            print(f" - {text}")
+    for keyword in keyword_content:
+        keyword_content[keyword] = " ".join(keyword_content[keyword])
+
+    with open("interim/keyword_content.json", "w", encoding="utf-8") as json_file:
+        json.dump(keyword_content, json_file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":
     main()
