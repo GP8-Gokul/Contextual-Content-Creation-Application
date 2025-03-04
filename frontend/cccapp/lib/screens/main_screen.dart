@@ -1,9 +1,8 @@
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
-import 'package:cccapp/widgets/bg.dart';
 import 'dart:developer';
 import 'package:cccapp/service/auth/logout.dart';
+import 'package:cccapp/widgets/bg.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -16,13 +15,14 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   static const Color primaryPurple = Color(0xFF9C27B0);
   static const Color darkPurple = Color(0xFF6A1B9A);
+  static const Color lightPurple = Color(0xFFE1BEE7);
+  static const Color backgroundMid = Colors.grey;
 
-  String _selectedGraphType = 'Daily';
-  List<String> _graphTypes = ['Daily', 'Weekly', 'Monthly'];
+  String _selectedStudyPlan = 'STUDY PLAN 1';
+  List<String> _studyPlans = ['STUDY PLAN 1', 'STUDY PLAN 2', 'STUDY PLAN 3'];
 
-  List<GraphData> _dailyData = [];
-  List<GraphData> _weeklyData = [];
-  List<GraphData> _monthlyData = [];
+  int? _selectedTileIndex;
+  List<TopicData> _topicData = [];
 
   @override
   void initState() {
@@ -32,41 +32,110 @@ class _MainScreenState extends State<MainScreen> {
 
   void _generateSampleData() {
     final now = DateTime.now();
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      _dailyData
-          .add(GraphData(date, (2 + i * 0.8 + (date.day % 3)).toDouble()));
-    }
 
-    for (int i = 3; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i * 7));
-      _weeklyData
-          .add(GraphData(date, (4 + i * 1.5 + (date.day % 2)).toDouble()));
-    }
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 2, 28),
+        topics: [
+          "Introduction to Algorithms",
+          "Basic Data Structures",
+          "Time Complexity Analysis"
+        ],
+        isLocked: false));
 
-    for (int i = 5; i >= 0; i--) {
-      final date = DateTime(now.year, now.month - i, 1);
-      _monthlyData
-          .add(GraphData(date, (5 + i * 0.7 + (date.month % 3)).toDouble()));
-    }
+    // March 1
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 3, 1),
+        topics: [
+          "Sorting Algorithms",
+          "Searching Techniques",
+          "Recursion Basics"
+        ],
+        isLocked: false));
+
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 3, 2),
+        topics: [
+          "Dynamic Programming",
+          "Greedy Algorithms",
+          "Divide and Conquer"
+        ],
+        isLocked: false));
+
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 3, 3),
+        topics: [
+          "Graph Theory Basics",
+          "Tree Data Structures",
+          "Heap and Priority Queue"
+        ],
+        isLocked: false));
+
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 3, 4),
+        topics: [
+          "Advanced Graph Algorithms",
+          "Shortest Path Problems",
+          "Minimum Spanning Tree"
+        ],
+        isLocked: true));
+
+    _topicData.add(TopicData(
+        date: DateTime(now.year, 3, 5),
+        topics: ["String Algorithms", "Pattern Matching", "Text Processing"],
+        isLocked: true));
   }
 
-  List<GraphData> get _currentData {
-    switch (_selectedGraphType) {
-      case 'Weekly':
-        return _weeklyData;
-      case 'Monthly':
-        return _monthlyData;
-      case 'Daily':
-      default:
-        return _dailyData;
-    }
+  bool _isAccessible(DateTime date) {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final topicDate = DateTime(date.year, date.month, date.day);
+    return !topicDate.isAfter(today);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: PopupMenuButton<String>(
+          onSelected: (value) {
+            if (value == 'logout') {
+              logoutUser();
+              Navigator.of(context).pop('login_screen');
+            }
+          },
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'logout',
+              child: Row(
+                children: const [
+                  Icon(Icons.logout),
+                  SizedBox(width: 8),
+                  Text('Logout'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'settings',
+              child: Row(
+                children: const [
+                  Icon(Icons.settings),
+                  SizedBox(width: 8),
+                  Text('Settings'),
+                ],
+              ),
+            ),
+            PopupMenuItem(
+              value: 'storage',
+              child: Row(
+                children: const [
+                  Icon(Icons.storage),
+                  SizedBox(width: 8),
+                  Text('Storage'),
+                ],
+              ),
+            ),
+          ],
+        ),
         elevation: 0,
         backgroundColor: darkPurple,
         centerTitle: true,
@@ -75,46 +144,13 @@ class _MainScreenState extends State<MainScreen> {
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
+            fontSize: 24,
           ),
-        ),
-        leading: PopupMenuButton<String>(
-          icon: const Icon(Icons.menu),
-          onSelected: (value) {
-            if (value == 'settings') {
-              log('Settings pressed');
-            } else if (value == 'logout') {
-              log('Logout pressed');
-              logoutUser();
-              Navigator.pop(context);
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem(
-              value: 'settings',
-              child: Row(
-                children: const [
-                  Icon(Icons.settings, color: darkPurple),
-                  SizedBox(width: 8),
-                  Text('Settings'),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'logout',
-              child: Row(
-                children: const [
-                  Icon(Icons.exit_to_app, color: darkPurple),
-                  SizedBox(width: 8),
-                  Text('Logout'),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
       body: Stack(
         children: [
-          const GradientBackground(),
+          GradientBackground(),
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.all(16.0),
@@ -126,8 +162,8 @@ class _MainScreenState extends State<MainScreen> {
                         child: _buildGradientButton(
                           title: 'CONTENT\nCREATION',
                           onTap: () {
-                            log('1 pressed');
-                            Navigator.pushNamed(context, 'input_screen');
+                            log('Content Creation button pressed');
+                            Navigator.of(context).pushNamed('input_screen');
                           },
                         ),
                       ),
@@ -136,7 +172,8 @@ class _MainScreenState extends State<MainScreen> {
                         child: _buildGradientButton(
                           title: 'STUDY PLAN\nCREATION',
                           onTap: () {
-                            log('2 pressed');
+                            log('Study Plan Creation button pressed');
+                            Navigator.of(context).pushNamed('studyplan_screen');
                           },
                         ),
                       ),
@@ -173,26 +210,26 @@ class _MainScreenState extends State<MainScreen> {
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                const Text(
-                                  'STUDY PLAN 1',
-                                  style: TextStyle(
+                                Text(
+                                  _selectedStudyPlan,
+                                  style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Colors.black,
                                   ),
                                 ),
                                 DropdownButton<String>(
-                                  value: _selectedGraphType,
+                                  value: _selectedStudyPlan,
                                   dropdownColor: Colors.grey.shade700,
                                   underline: Container(),
                                   style: const TextStyle(color: Colors.white),
                                   onChanged: (String? newValue) {
                                     if (newValue != null) {
                                       setState(() {
-                                        _selectedGraphType = newValue;
+                                        _selectedStudyPlan = newValue;
                                       });
                                     }
                                   },
-                                  items: _graphTypes
+                                  items: _studyPlans
                                       .map<DropdownMenuItem<String>>(
                                           (String value) {
                                     return DropdownMenuItem<String>(
@@ -205,9 +242,66 @@ class _MainScreenState extends State<MainScreen> {
                             ),
                           ),
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: _buildLineChart(),
+                            child: ListView.builder(
+                              padding: const EdgeInsets.all(8),
+                              itemCount: _topicData.length,
+                              itemBuilder: (context, index) {
+                                final topic = _topicData[index];
+                                final isAccessible = _isAccessible(topic.date);
+
+                                return Column(
+                                  children: [
+                                    InkWell(
+                                      onTap: () {
+                                        if (isAccessible) {
+                                          setState(() {
+                                            _selectedTileIndex =
+                                                _selectedTileIndex == index
+                                                    ? null
+                                                    : index;
+                                          });
+
+                                          if (_selectedTileIndex == index) {
+                                            _showTopicDetail(context, topic);
+                                          }
+                                        }
+                                      },
+                                      child: Container(
+                                        margin:
+                                            const EdgeInsets.only(bottom: 8),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 16, vertical: 12),
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey.shade500,
+                                          borderRadius:
+                                              BorderRadius.circular(16),
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              DateFormat('MMM d')
+                                                  .format(topic.date)
+                                                  .toUpperCase(),
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.black,
+                                              ),
+                                            ),
+                                            Icon(
+                                              isAccessible
+                                                  ? Icons.lock_open
+                                                  : Icons.lock,
+                                              color: Colors.black,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              },
                             ),
                           ),
                         ],
@@ -225,6 +319,105 @@ class _MainScreenState extends State<MainScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showTopicDetail(BuildContext context, TopicData topic) {
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.7),
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          insetPadding: const EdgeInsets.all(16),
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: backgroundMid.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: primaryPurple.withOpacity(0.5),
+                width: 1.5,
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      DateFormat('MMMM d, yyyy').format(topic.date),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close, color: Colors.white),
+                      onPressed: () => Navigator.of(context).pop(),
+                    ),
+                  ],
+                ),
+                const Divider(color: primaryPurple, thickness: 1),
+                const SizedBox(height: 16),
+                const Text(
+                  "Today's Topics:",
+                  style: TextStyle(
+                    color: lightPurple,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...topic.topics
+                    .map((topicName) => Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Icon(
+                                Icons.circle,
+                                size: 10,
+                                color: primaryPurple,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  topicName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ))
+                    .toList(),
+                const SizedBox(height: 24),
+                Center(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryPurple,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed: () => Navigator.of(context).pop(),
+                    child: const Text('Start Studying'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -264,136 +457,6 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
-  Widget _buildLineChart() {
-    final data = _currentData;
-
-    if (data.isEmpty) {
-      return const Center(child: Text('No data available'));
-    }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: true,
-          horizontalInterval: 1,
-          verticalInterval: 1,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
-          getDrawingVerticalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= data.length || value.toInt() < 0) {
-                  return const SizedBox();
-                }
-
-                String text;
-                switch (_selectedGraphType) {
-                  case 'Daily':
-                    text = DateFormat('dd/MM').format(data[value.toInt()].date);
-                    break;
-                  case 'Weekly':
-                    text = 'W${value.toInt() + 1}';
-                    break;
-                  case 'Monthly':
-                    text = DateFormat('MMM').format(data[value.toInt()].date);
-                    break;
-                  default:
-                    text = value.toInt().toString();
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                );
-              },
-              reservedSize: 40,
-            ),
-          ),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        minX: 0,
-        maxX: data.length - 1.0,
-        minY: 0,
-        maxY: 10,
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(data.length, (index) {
-              return FlSpot(index.toDouble(), data[index].value);
-            }),
-            isCurved: true,
-            color: primaryPurple,
-            barWidth: 4,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 6,
-                  color: primaryPurple,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              color: primaryPurple.withOpacity(0.2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildScrollableArea() {
     return Container(
       width: double.infinity,
@@ -425,6 +488,7 @@ class _MainScreenState extends State<MainScreen> {
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   children: [
+                    // This area will be filled with future content
                     Text(
                       'Future content will appear here with texts and checkboxes.',
                       style: TextStyle(
@@ -444,9 +508,15 @@ class _MainScreenState extends State<MainScreen> {
   }
 }
 
-class GraphData {
+// Data class for topics
+class TopicData {
   final DateTime date;
-  final double value;
+  final List<String> topics;
+  final bool isLocked;
 
-  GraphData(this.date, this.value);
+  TopicData({
+    required this.date,
+    required this.topics,
+    required this.isLocked,
+  });
 }

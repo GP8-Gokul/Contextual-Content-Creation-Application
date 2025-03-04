@@ -1,5 +1,4 @@
 import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:cccapp/service/pdf_picker.dart';
 import 'package:cccapp/widgets/bg.dart';
@@ -101,9 +100,7 @@ class _InputScreenState extends State<InputScreen> {
                           gradient: LinearGradient(
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
-                            colors: _selectedPDF == null
-                                ? [darkPurple, primaryPurple]
-                                : [Colors.grey.shade800, Colors.grey.shade700],
+                            colors: [darkPurple, primaryPurple],
                             stops: const [0.3, 1.0],
                           ),
                           borderRadius: BorderRadius.circular(16),
@@ -116,7 +113,14 @@ class _InputScreenState extends State<InputScreen> {
                           ],
                         ),
                         child: ElevatedButton.icon(
-                          onPressed: _selectedPDF == null ? pickPDF : null,
+                          onPressed: () async {
+                            final file = await pickPDF();
+                            if (file != null) {
+                              setState(() {
+                                _selectedPDF = file;
+                              });
+                            }
+                          },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.transparent,
                             shadowColor: Colors.transparent,
@@ -179,7 +183,6 @@ class _InputScreenState extends State<InputScreen> {
                             ],
                           ),
                         ),
-
                       const SizedBox(height: 24),
 
                       // Keyword Input Section

@@ -2,6 +2,7 @@ import 'package:cccapp/screens/input_screen.dart';
 import 'package:cccapp/screens/login_screen.dart';
 import 'package:cccapp/screens/main_screen.dart';
 import 'package:cccapp/screens/output_screen.dart';
+import 'package:cccapp/screens/studyplan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -31,6 +32,7 @@ class MyApp extends StatelessWidget {
         MainScreen.routeName: (context) => const MainScreen(),
         InputScreen.routeName: (context) => const InputScreen(),
         OutputScreen.routeName: (context) => const OutputScreen(),
+        StudyPlanScreen.routeName: (context) => const StudyPlanScreen(),
       },
       initialRoute: LoginScreen.routeName,
     );
