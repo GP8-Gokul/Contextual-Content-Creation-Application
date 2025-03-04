@@ -102,6 +102,9 @@ class _MainScreenState extends State<MainScreen> {
               logoutUser();
               Navigator.of(context).pop('login_screen');
             }
+            if (value == 'storage') {
+              Navigator.of(context).pushNamed('storage_screen');
+            }
           },
           itemBuilder: (context) => [
             PopupMenuItem(
@@ -173,7 +176,6 @@ class _MainScreenState extends State<MainScreen> {
                           title: 'STUDY PLAN\nCREATION',
                           onTap: () {
                             log('Study Plan Creation button pressed');
-                            Navigator.of(context).pushNamed('studyplan_screen');
                           },
                         ),
                       ),
