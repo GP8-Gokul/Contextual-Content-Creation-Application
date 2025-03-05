@@ -1,3 +1,4 @@
+import 'package:cccapp/screens/daytoday_screen.dart';
 import 'package:cccapp/screens/input_screen.dart';
 import 'package:cccapp/screens/login_screen.dart';
 import 'package:cccapp/screens/main_screen.dart';
@@ -33,6 +34,7 @@ class MyApp extends StatelessWidget {
         InputScreen.routeName: (context) => const InputScreen(),
         OutputScreen.routeName: (context) => const OutputScreen(),
         StorageScreen.routeName: (context) => const StorageScreen(),
+        DaytoDayScreen.routeName: (context) => DaytoDayScreen(),
       },
       initialRoute: LoginScreen.routeName,
     );

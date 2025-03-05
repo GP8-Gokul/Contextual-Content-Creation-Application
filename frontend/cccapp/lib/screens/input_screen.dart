@@ -80,19 +80,15 @@ class _InputScreenState extends State<InputScreen> {
       backgroundColor: backgroundStart,
       body: Stack(
         children: [
-          // Fixed position gradient background
           const GradientBackground(),
-          // Main content layout
           SafeArea(
             child: Column(
               children: [
-                // Fixed content area
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16.0, 24.0, 16.0, 16.0),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // PDF Upload Section
                       Container(
                         width: double.infinity,
                         margin: const EdgeInsets.only(bottom: 16),
