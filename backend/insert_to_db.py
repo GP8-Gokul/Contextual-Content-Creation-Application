@@ -2,7 +2,7 @@ import json
 
 from connect import commit, get_cursor
 
-def save_to_db(content,user_id):
+def save_to_db(content,user_id,s_id):
     cursor=get_cursor()
-    cursor.execute("INSERT INTO study_plan (user_id, content) VALUES (?, ?)", (user_id, json.dumps(content)))
+    cursor.execute("UPDATE study_plan SET content = ? WHERE s_id = ?", (json.dumps(content), s_id))
     commit()

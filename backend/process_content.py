@@ -10,7 +10,7 @@ from pages import get_keyword_pages
 from refine_map import refine_mapping
 from refined_text import refined_text_re
 
-def process_content(pdf_base64, keywords,userid):
+def process_content(pdf_base64, keywords,userid,s_id):
 
     pdf_bytes = base64.b64decode(pdf_base64)
     cleaned_text = clean_and_sort(pdf_bytes)
@@ -43,7 +43,7 @@ def process_content(pdf_base64, keywords,userid):
         }
     print("combined_dict created")
     
-    save_to_db(combined_dict, userid)
+    save_to_db(combined_dict, userid,s_id)
     print("save_to_db executed")
 
 

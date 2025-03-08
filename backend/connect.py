@@ -1,11 +1,8 @@
-import sqlite3
-
-db="backend/studyplanner.db"
-
+import sqlitecloud
 
 def get_cursor():
     global conn 
-    conn = sqlite3.connect(db)
+    conn = sqlitecloud.connect("sqlitecloud://cgzby8cphz.g1.sqlite.cloud:8860/studyplanner.db?apikey=CKbk1dKMFgJKoiIXCg9lJteo5I1HwUPhqJdvNzbcsGE")
     conn.execute("PRAGMA foreign_keys = ON")
     cursor=conn.cursor()
     return cursor

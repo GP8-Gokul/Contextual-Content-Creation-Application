@@ -23,9 +23,6 @@ def keyword_content_mapping(chunks, keywords):
     for key in keyword_content:
         keyword_content[key] = ' '.join(keyword_content[key])
 
-    with open('backend/output.txt', 'w') as f:
-        for key, value in keyword_content.items():
-            f.write(f"{key}: {value}\n")
     return keyword_content
 
     
