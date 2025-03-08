@@ -9,27 +9,24 @@ from transformers import pipeline
 
 def initialize_classifier():
     global classifier 
-    classifier = pipeline("zero-shot-classification", model="facebook/bart-large-mnli")
+    classifier = pipeline("zero-shot-classification", model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
 
-def keyword_content_mapping(refined_text, keywords):
+def keyword_content_mapping(chunks, keywords):
     keyword_content = {}
 
-    predictions = classifier(refined_text, candidate_labels=keywords, multi_label=True)
-
-
-    for label, score in zip(predictions["labels"], predictions["scores"]):
-        print(label, score)
-        if score > 0.3:
-            related_text = ". ".join([sentence for sentence in refined_text.split(". ") if label.lower() in sentence.lower()])
-            keyword_content[label] = related_text if related_text else "No related text found."
-
+    for chunk in chunks:
+        result = classifier(chunk, keywords, multi_label=True)
+        for label, score in zip(result["labels"], result["scores"]):
+            if score > 0.5:  
+                keyword_content[label].extend(chunk)
     return keyword_content
+
     
 def main():
     initialize_classifier()
-    refined_text = "Machine learning and neural networks are transforming industries."
+    chunks = "Machine learning and neural networks are transforming industries."
     keywords = ["AI"]
-    print(keyword_content_mapping(refined_text, keywords))
+    print(keyword_content_mapping(chunks, keywords))
 
 if __name__ == "__main__":
     main()

@@ -73,8 +73,8 @@ def read_txt(file_path):
         return file.readlines()
 
 def main():
-    file_path = 'interim/extracted.txt'
-    output_path = 'interim/cleaned.txt'
+    file_path = 'interim/extractedcgip.txt'
+    output_path = 'interim/cleanedcgip.txt'
 
     # Read the input file
     text = read_txt(file_path)

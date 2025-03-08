@@ -55,8 +55,8 @@ def save_extracted_text(pdf_path, output_file_path):
 
 if __name__ == "__main__":
 
-    pdf_path = "interim/testfile.pdf"  
-    output_file_path = "interim/extracted.txt"  
+    pdf_path = "interim/cgip.pdf"  
+    output_file_path = "interim/extractedcgip.txt"  
 
     # Extract and save refined text
     save_extracted_text(pdf_path, output_file_path)
