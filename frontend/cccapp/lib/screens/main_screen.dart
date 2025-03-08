@@ -1,9 +1,13 @@
 import 'dart:developer';
 import 'package:cccapp/service/auth/logout.dart';
 import 'package:cccapp/widgets/bg.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'package:cccapp/models/topic_data.dart';
+import 'package:cccapp/widgets/glassmorphic_button.dart';
+import 'package:cccapp/widgets/enhanced_dropdown.dart';
+import 'package:cccapp/widgets/topic_list.dart';
+import 'package:cccapp/widgets/glassmorphic_scrollable_area.dart';
+import 'package:cccapp/service/firebase_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -16,7 +20,6 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   static const Color primaryPurple = Color(0xFF9C27B0);
   static const Color darkPurple = Color(0xFF6A1B9A);
-  static const Color softPurple = Color(0xFFE6E0F8);
 
   List<String> _studyPlans = [];
   List<String> _dayToDayPlans = [];
@@ -24,6 +27,8 @@ class _MainScreenState extends State<MainScreen> {
   String _selectedDayToDayPlan = "";
   List<TopicData> _topicData = [];
   int? _selectedTileIndex;
+  Map<String, bool> _topicCompletionStatus = {};
+  final FirebaseService _firebaseService = FirebaseService();
 
   @override
   void initState() {
@@ -32,37 +37,16 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _fetchStudyPlans() async {
-    DatabaseReference studyPlanRef =
-        FirebaseDatabase.instance.ref("studyPlans");
-    DataSnapshot snapshot = await studyPlanRef.get();
-
-    if (snapshot.exists) {
-      List plans = (snapshot.value as Map).keys.toList();
-      setState(() {
-        _studyPlans = plans.cast<String>();
-      });
-    }
+    final plans = await _firebaseService.fetchStudyPlans();
+    setState(() {
+      _studyPlans = plans;
+    });
   }
 
   void _fetchDayToDayPlans() async {
     if (_selectedStudyPlan.isEmpty) return;
 
-    DatabaseReference dayToDayRef =
-        FirebaseDatabase.instance.ref("daytoday/$_selectedStudyPlan");
-
-    DataSnapshot snapshot = await dayToDayRef.get();
-    if (!snapshot.exists) {
-      setState(() {
-        _dayToDayPlans = [];
-      });
-      return;
-    }
-
-    // Extract Day-to-Day Plans under the selected Study Plan
-    Map<String, dynamic> data =
-        Map<String, dynamic>.from(snapshot.value as Map);
-    List<String> plans = data.keys.toList();
-
+    final plans = await _firebaseService.fetchDayToDayPlans(_selectedStudyPlan);
     setState(() {
       _dayToDayPlans = plans;
     });
@@ -71,40 +55,25 @@ class _MainScreenState extends State<MainScreen> {
   void _fetchDayToDayTopics() async {
     if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
 
-    DatabaseReference topicsRef = FirebaseDatabase.instance
-        .ref("daytoday/$_selectedStudyPlan/$_selectedDayToDayPlan");
-
-    DataSnapshot snapshot = await topicsRef.get();
-    if (!snapshot.exists) {
-      setState(() {
-        _topicData = [];
-      });
-      return;
-    }
-
-    Map<String, dynamic> data =
-        Map<String, dynamic>.from(snapshot.value as Map);
-    List<TopicData> fetchedTopics = [];
-
-    data.forEach((date, topicsMap) {
-      DateTime parsedDate = DateFormat('yyyy-MM-dd').parse(date);
-      List<String> topics = List<String>.from((topicsMap as Map).keys);
-
-      fetchedTopics.add(TopicData(
-        date: parsedDate,
-        topics: topics,
-        isLocked: !_isAccessible(parsedDate),
-      ));
-    });
+    final fetchedTopics = await _firebaseService.fetchTopics(
+        _selectedStudyPlan, _selectedDayToDayPlan);
 
     setState(() {
-      _topicData = fetchedTopics..sort((a, b) => a.date.compareTo(b.date));
+      _topicData = fetchedTopics;
     });
   }
 
-  bool _isAccessible(DateTime date) {
-    return date.isBefore(DateTime.now()) ||
-        date.isAtSameMomentAs(DateTime.now());
+  void _updateTopicStatus(String date, String topic, bool completed) async {
+    if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
+
+    await _firebaseService.updateTopicStatus(
+        _selectedStudyPlan, _selectedDayToDayPlan, date, topic, completed);
+
+    // Update local state
+    setState(() {
+      String key = "$date-$topic";
+      _topicCompletionStatus[key] = completed;
+    });
   }
 
   @override
@@ -112,6 +81,22 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [darkPurple, primaryPurple.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+        ),
         leading: PopupMenuButton<String>(
           icon: Icon(Icons.menu, color: Colors.white),
           onSelected: (value) {
@@ -184,7 +169,7 @@ class _MainScreenState extends State<MainScreen> {
                   Row(
                     children: [
                       Expanded(
-                        child: _buildGlassmorphicButton(
+                        child: GlassmorphicButton(
                           title: 'CONTENT\nCREATION',
                           onTap: () {
                             log('Content Creation button pressed');
@@ -194,7 +179,7 @@ class _MainScreenState extends State<MainScreen> {
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildGlassmorphicButton(
+                        child: GlassmorphicButton(
                           title: 'DAY2DAY PLAN\nCREATION',
                           onTap: () {
                             log('Day2Day Plan Creation button pressed');
@@ -217,23 +202,75 @@ class _MainScreenState extends State<MainScreen> {
                           color: Colors.white.withOpacity(0.2),
                           width: 1,
                         ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            spreadRadius: 1,
+                          ),
+                        ],
                       ),
                       child: Column(
                         children: [
-                          // Study Plan Selector with Glassmorphic Design
-                          _buildGlassmorphicSelector(
-                            child: _buildStudyPlanSelector(),
+                          const SizedBox(height: 8),
+                          // Enhanced Study Plan Selector
+                          EnhancedDropdown(
+                            items: _studyPlans,
+                            selectedValue: _selectedStudyPlan.isEmpty
+                                ? null
+                                : _selectedStudyPlan,
+                            hintText: "Select Study Plan",
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedStudyPlan = newValue;
+                                  _selectedDayToDayPlan = "";
+                                  _selectedTileIndex = null;
+                                  _fetchDayToDayPlans();
+                                });
+                              }
+                            },
                           ),
 
-                          // Day-to-Day Plan Selector
+                          const SizedBox(height: 8),
+                          // Enhanced Day-to-Day Plan Selector
                           if (_dayToDayPlans.isNotEmpty)
-                            _buildGlassmorphicSelector(
-                              child: _buildDayToDayPlanSelector(),
+                            EnhancedDropdown(
+                              items: _dayToDayPlans,
+                              selectedValue: _selectedDayToDayPlan.isEmpty
+                                  ? null
+                                  : _selectedDayToDayPlan,
+                              hintText: "Select Day-to-Day Plan",
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _selectedDayToDayPlan = newValue;
+                                    _selectedTileIndex = null;
+                                    _fetchDayToDayTopics();
+                                  });
+                                }
+                              },
                             ),
 
+                          const SizedBox(height: 8),
                           // Topics List with Enhanced Design
                           Expanded(
-                            child: _buildEnhancedTopicsList(),
+                            child: TopicsList(
+                              selectedStudyPlan: _selectedStudyPlan,
+                              selectedDayToDayPlan: _selectedDayToDayPlan,
+                              topicData: _topicData,
+                              selectedTileIndex: _selectedTileIndex,
+                              topicCompletionStatus: _topicCompletionStatus,
+                              onTileSelected: (index) {
+                                setState(() {
+                                  _selectedTileIndex =
+                                      _selectedTileIndex == index
+                                          ? null
+                                          : index;
+                                });
+                              },
+                              onTopicStatusChanged: _updateTopicStatus,
+                            ),
                           ),
                         ],
                       ),
@@ -243,7 +280,11 @@ class _MainScreenState extends State<MainScreen> {
                   const SizedBox(height: 20),
 
                   // Bottom Scrollable Area
-                  _buildGlassmorphicScrollableArea(),
+                  GlassmorphicScrollableArea(
+                    title: 'Daily Inspiration',
+                    content:
+                        'Your daily motivation and guidance will be displayed here. Stay focused, stay motivated!',
+                  ),
 
                   const SizedBox(height: 20),
                 ],
@@ -254,282 +295,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
-  // Enhanced Glassmorphic Button Design
-  Widget _buildGlassmorphicButton(
-      {required String title, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withOpacity(0.2),
-            width: 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            letterSpacing: 1.1,
-          ),
-        ),
-      ),
-    );
-  }
-
-  // Glassmorphic Selector Wrapper
-  Widget _buildGlassmorphicSelector({required Widget child}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: child,
-    );
-  }
-
-  // Enhanced Topics List
-  Widget _buildEnhancedTopicsList() {
-    return _selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty
-        ? Center(
-            child: Text(
-              "Select a Study Plan and Day-to-Day Plan",
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white.withOpacity(0.7),
-              ),
-              textAlign: TextAlign.center,
-            ),
-          )
-        : Container(
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: ListView.builder(
-              shrinkWrap: true,
-              padding: const EdgeInsets.all(8),
-              itemCount: _topicData.length,
-              itemBuilder: (context, index) {
-                final topic = _topicData[index];
-                final isAccessible = _isAccessible(topic.date);
-
-                return AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 4, horizontal: 4),
-                  decoration: BoxDecoration(
-                    color: isAccessible
-                        ? softPurple.withOpacity(0.5)
-                        : Colors.grey.shade600.withOpacity(0.3),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: isAccessible
-                          ? primaryPurple.withOpacity(0.3)
-                          : Colors.grey.withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: ListTile(
-                    title: Text(
-                      DateFormat('MMM d').format(topic.date).toUpperCase(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: isAccessible ? darkPurple : Colors.white70,
-                      ),
-                    ),
-                    trailing: Icon(
-                      isAccessible ? Icons.lock_open : Icons.lock,
-                      color: isAccessible ? darkPurple : Colors.white70,
-                    ),
-                    onTap: isAccessible
-                        ? () {
-                            setState(() {
-                              _selectedTileIndex =
-                                  _selectedTileIndex == index ? null : index;
-                            });
-                          }
-                        : null,
-                  ),
-                );
-              },
-            ),
-          );
-  }
-
-  // Glassmorphic Scrollable Area
-  Widget _buildGlassmorphicScrollableArea() {
-    return Container(
-      height: 200,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Daily Inspiration',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.1,
-              ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(
-                  'Your daily motivation and guidance will be displayed here. Stay focused, stay motivated!',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.7),
-                    fontSize: 16,
-                    letterSpacing: 1.1,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStudyPlanSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: primaryPurple,
-        borderRadius: const BorderRadius.only(
-          topLeft: Radius.circular(16),
-          topRight: Radius.circular(16),
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              _selectedStudyPlan.isEmpty
-                  ? "Select Study Plan"
-                  : _selectedStudyPlan,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black),
-              overflow: TextOverflow.ellipsis, // Prevent text overflow
-            ),
-          ),
-          DropdownButton<String>(
-            value: _selectedStudyPlan.isEmpty ? null : _selectedStudyPlan,
-            dropdownColor: Colors.grey.shade700,
-            underline: Container(),
-            hint: const Text("Choose Plan",
-                style: TextStyle(color: Colors.white)),
-            style: const TextStyle(color: Colors.white),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedStudyPlan = newValue;
-                  _selectedDayToDayPlan = "";
-                  _fetchDayToDayPlans();
-                });
-              }
-            },
-            items: _studyPlans.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value, overflow: TextOverflow.ellipsis),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDayToDayPlanSelector() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      color: Colors.grey.shade300,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Text(
-              _selectedDayToDayPlan.isEmpty
-                  ? "Select Day-to-Day Plan"
-                  : _selectedDayToDayPlan,
-              style: const TextStyle(
-                  fontWeight: FontWeight.bold, color: Colors.black),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-          DropdownButton<String>(
-            value: _selectedDayToDayPlan.isEmpty ? null : _selectedDayToDayPlan,
-            dropdownColor: Colors.grey.shade700,
-            underline: Container(),
-            hint: const Text("Choose Plan",
-                style: TextStyle(color: Colors.black)),
-            style: const TextStyle(color: Colors.black),
-            onChanged: (String? newValue) {
-              if (newValue != null) {
-                setState(() {
-                  _selectedDayToDayPlan = newValue;
-                  _fetchDayToDayTopics();
-                });
-              }
-            },
-            items: _dayToDayPlans.map((String value) {
-              return DropdownMenuItem<String>(
-                value: value,
-                child: Text(value, overflow: TextOverflow.ellipsis),
-              );
-            }).toList(),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// Data class for topics
-class TopicData {
-  final DateTime date;
-  final List<String> topics;
-  final bool isLocked;
-
-  TopicData({
-    required this.date,
-    required this.topics,
-    required this.isLocked,
-  });
 }
