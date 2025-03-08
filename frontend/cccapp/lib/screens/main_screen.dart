@@ -1,9 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart';
-import 'package:cccapp/widgets/bg.dart';
 import 'dart:developer';
 import 'package:cccapp/service/auth/logout.dart';
+import 'package:cccapp/widgets/bg.dart';
+import 'package:flutter/material.dart';
+import 'package:cccapp/models/topic_data.dart';
+import 'package:cccapp/widgets/glassmorphic_button.dart';
+import 'package:cccapp/widgets/enhanced_dropdown.dart';
+import 'package:cccapp/widgets/topic_list.dart';
+import 'package:cccapp/widgets/glassmorphic_scrollable_area.dart';
+import 'package:cccapp/service/firebase_service.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -17,78 +21,104 @@ class _MainScreenState extends State<MainScreen> {
   static const Color primaryPurple = Color(0xFF9C27B0);
   static const Color darkPurple = Color(0xFF6A1B9A);
 
-  String _selectedGraphType = 'Daily';
-  List<String> _graphTypes = ['Daily', 'Weekly', 'Monthly'];
-
-  List<GraphData> _dailyData = [];
-  List<GraphData> _weeklyData = [];
-  List<GraphData> _monthlyData = [];
+  List<String> _studyPlans = [];
+  List<String> _dayToDayPlans = [];
+  String _selectedStudyPlan = "";
+  String _selectedDayToDayPlan = "";
+  List<TopicData> _topicData = [];
+  int? _selectedTileIndex;
+  Map<String, bool> _topicCompletionStatus = {};
+  final FirebaseService _firebaseService = FirebaseService();
 
   @override
   void initState() {
     super.initState();
-    _generateSampleData();
+    _fetchStudyPlans();
   }
 
-  void _generateSampleData() {
-    final now = DateTime.now();
-    for (int i = 6; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i));
-      _dailyData
-          .add(GraphData(date, (2 + i * 0.8 + (date.day % 3)).toDouble()));
-    }
-
-    for (int i = 3; i >= 0; i--) {
-      final date = now.subtract(Duration(days: i * 7));
-      _weeklyData
-          .add(GraphData(date, (4 + i * 1.5 + (date.day % 2)).toDouble()));
-    }
-
-    for (int i = 5; i >= 0; i--) {
-      final date = DateTime(now.year, now.month - i, 1);
-      _monthlyData
-          .add(GraphData(date, (5 + i * 0.7 + (date.month % 3)).toDouble()));
-    }
+  void _fetchStudyPlans() async {
+    final plans = await _firebaseService.fetchStudyPlans();
+    setState(() {
+      _studyPlans = plans;
+    });
   }
 
-  List<GraphData> get _currentData {
-    switch (_selectedGraphType) {
-      case 'Weekly':
-        return _weeklyData;
-      case 'Monthly':
-        return _monthlyData;
-      case 'Daily':
-      default:
-        return _dailyData;
-    }
+  void _fetchDayToDayPlans() async {
+    if (_selectedStudyPlan.isEmpty) return;
+
+    final plans = await _firebaseService.fetchDayToDayPlans(_selectedStudyPlan);
+    setState(() {
+      _dayToDayPlans = plans;
+    });
+  }
+
+  void _fetchDayToDayTopics() async {
+    if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
+
+    final fetchedTopics = await _firebaseService.fetchTopics(
+        _selectedStudyPlan, _selectedDayToDayPlan);
+
+    setState(() {
+      _topicData = fetchedTopics;
+    });
+  }
+
+  void _updateTopicStatus(String date, String topic, bool completed) async {
+    if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
+
+    await _firebaseService.updateTopicStatus(
+        _selectedStudyPlan, _selectedDayToDayPlan, date, topic, completed);
+
+    // Update local state
+    setState(() {
+      String key = "$date-$topic";
+      _topicCompletionStatus[key] = completed;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        elevation: 0,
-        backgroundColor: darkPurple,
-        centerTitle: true,
-        title: const Text(
-          'MAIN SCREEN',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [darkPurple, primaryPurple.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
         ),
         leading: PopupMenuButton<String>(
-          icon: const Icon(Icons.menu),
+          icon: Icon(Icons.menu, color: Colors.white),
           onSelected: (value) {
-            if (value == 'settings') {
-              log('Settings pressed');
-            } else if (value == 'logout') {
-              log('Logout pressed');
+            if (value == 'logout') {
               logoutUser();
-              Navigator.pop(context);
+              Navigator.of(context).pop('login_screen');
+            }
+            if (value == 'storage') {
+              Navigator.of(context).pushNamed('storage_screen');
             }
           },
           itemBuilder: (context) => [
+            PopupMenuItem(
+              value: 'logout',
+              child: Row(
+                children: const [
+                  Icon(Icons.logout, color: darkPurple),
+                  SizedBox(width: 8),
+                  Text('Logout'),
+                ],
+              ),
+            ),
             PopupMenuItem(
               value: 'settings',
               child: Row(
@@ -100,125 +130,163 @@ class _MainScreenState extends State<MainScreen> {
               ),
             ),
             PopupMenuItem(
-              value: 'logout',
+              value: 'storage',
               child: Row(
                 children: const [
-                  Icon(Icons.exit_to_app, color: darkPurple),
+                  Icon(Icons.storage, color: darkPurple),
                   SizedBox(width: 8),
-                  Text('Logout'),
+                  Text('Storage'),
                 ],
               ),
             ),
           ],
         ),
+        elevation: 0,
+        backgroundColor: Colors.transparent,
+        centerTitle: true,
+        title: const Text(
+          'STUDY COMPANION',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 1.2,
+            fontSize: 22,
+          ),
+        ),
       ),
       body: Stack(
         children: [
-          const GradientBackground(),
+          // Gradient Background
+          GradientBackground(),
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  const SizedBox(height: 20),
+                  // Action Buttons Row
                   Row(
                     children: [
                       Expanded(
-                        child: _buildGradientButton(
+                        child: GlassmorphicButton(
                           title: 'CONTENT\nCREATION',
                           onTap: () {
-                            log('1 pressed');
-                            Navigator.pushNamed(context, 'input_screen');
+                            log('Content Creation button pressed');
+                            Navigator.of(context).pushNamed('input_screen');
                           },
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildGradientButton(
-                          title: 'STUDY PLAN\nCREATION',
+                        child: GlassmorphicButton(
+                          title: 'DAY2DAY PLAN\nCREATION',
                           onTap: () {
-                            log('2 pressed');
+                            log('Day2Day Plan Creation button pressed');
+                            Navigator.of(context).pushNamed('daytoday_screen');
                           },
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
+
+                  const SizedBox(height: 20),
+
+                  // Selectors and Topics
                   Expanded(
-                    flex: 2,
                     child: Container(
-                      width: double.infinity,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
+                        color: Colors.white.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: Colors.white.withOpacity(0.2),
+                          width: 1,
+                        ),
                         boxShadow: [
                           BoxShadow(
-                            color: darkPurple.withOpacity(0.2),
-                            blurRadius: 8,
-                            offset: const Offset(0, 2),
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            spreadRadius: 1,
                           ),
                         ],
                       ),
                       child: Column(
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 16, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: primaryPurple,
-                              borderRadius: const BorderRadius.only(
-                                topLeft: Radius.circular(16),
-                                topRight: Radius.circular(16),
-                              ),
-                            ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                const Text(
-                                  'STUDY PLAN 1',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                                DropdownButton<String>(
-                                  value: _selectedGraphType,
-                                  dropdownColor: Colors.grey.shade700,
-                                  underline: Container(),
-                                  style: const TextStyle(color: Colors.white),
-                                  onChanged: (String? newValue) {
-                                    if (newValue != null) {
-                                      setState(() {
-                                        _selectedGraphType = newValue;
-                                      });
-                                    }
-                                  },
-                                  items: _graphTypes
-                                      .map<DropdownMenuItem<String>>(
-                                          (String value) {
-                                    return DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Text(value),
-                                    );
-                                  }).toList(),
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 8),
+                          // Enhanced Study Plan Selector
+                          EnhancedDropdown(
+                            items: _studyPlans,
+                            selectedValue: _selectedStudyPlan.isEmpty
+                                ? null
+                                : _selectedStudyPlan,
+                            hintText: "Select Study Plan",
+                            onChanged: (String? newValue) {
+                              if (newValue != null) {
+                                setState(() {
+                                  _selectedStudyPlan = newValue;
+                                  _selectedDayToDayPlan = "";
+                                  _selectedTileIndex = null;
+                                  _fetchDayToDayPlans();
+                                });
+                              }
+                            },
                           ),
+
+                          const SizedBox(height: 8),
+                          // Enhanced Day-to-Day Plan Selector
+                          if (_dayToDayPlans.isNotEmpty)
+                            EnhancedDropdown(
+                              items: _dayToDayPlans,
+                              selectedValue: _selectedDayToDayPlan.isEmpty
+                                  ? null
+                                  : _selectedDayToDayPlan,
+                              hintText: "Select Day-to-Day Plan",
+                              onChanged: (String? newValue) {
+                                if (newValue != null) {
+                                  setState(() {
+                                    _selectedDayToDayPlan = newValue;
+                                    _selectedTileIndex = null;
+                                    _fetchDayToDayTopics();
+                                  });
+                                }
+                              },
+                            ),
+
+                          const SizedBox(height: 8),
+                          // Topics List with Enhanced Design
                           Expanded(
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: _buildLineChart(),
+                            child: TopicsList(
+                              selectedStudyPlan: _selectedStudyPlan,
+                              selectedDayToDayPlan: _selectedDayToDayPlan,
+                              topicData: _topicData,
+                              selectedTileIndex: _selectedTileIndex,
+                              topicCompletionStatus: _topicCompletionStatus,
+                              onTileSelected: (index) {
+                                setState(() {
+                                  _selectedTileIndex =
+                                      _selectedTileIndex == index
+                                          ? null
+                                          : index;
+                                });
+                              },
+                              onTopicStatusChanged: _updateTopicStatus,
                             ),
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    flex: 2,
-                    child: _buildScrollableArea(),
+
+                  const SizedBox(height: 20),
+
+                  // Bottom Scrollable Area
+                  GlassmorphicScrollableArea(
+                    title: 'Daily Inspiration',
+                    content:
+                        'Your daily motivation and guidance will be displayed here. Stay focused, stay motivated!',
                   ),
+
+                  const SizedBox(height: 20),
                 ],
               ),
             ),
@@ -227,226 +295,4 @@ class _MainScreenState extends State<MainScreen> {
       ),
     );
   }
-
-  Widget _buildGradientButton(
-      {required String title, required VoidCallback onTap}) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [darkPurple, primaryPurple],
-            stops: [0.3, 1.0],
-          ),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: darkPurple.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Text(
-          title,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLineChart() {
-    final data = _currentData;
-
-    if (data.isEmpty) {
-      return const Center(child: Text('No data available'));
-    }
-
-    return LineChart(
-      LineChartData(
-        gridData: FlGridData(
-          show: true,
-          drawVerticalLine: true,
-          horizontalInterval: 1,
-          verticalInterval: 1,
-          getDrawingHorizontalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
-          getDrawingVerticalLine: (value) {
-            return FlLine(
-              color: Colors.grey.shade300,
-              strokeWidth: 1,
-            );
-          },
-        ),
-        titlesData: FlTitlesData(
-          show: true,
-          rightTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          topTitles: AxisTitles(
-            sideTitles: SideTitles(showTitles: false),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 30,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                if (value.toInt() >= data.length || value.toInt() < 0) {
-                  return const SizedBox();
-                }
-
-                String text;
-                switch (_selectedGraphType) {
-                  case 'Daily':
-                    text = DateFormat('dd/MM').format(data[value.toInt()].date);
-                    break;
-                  case 'Weekly':
-                    text = 'W${value.toInt() + 1}';
-                    break;
-                  case 'Monthly':
-                    text = DateFormat('MMM').format(data[value.toInt()].date);
-                    break;
-                  default:
-                    text = value.toInt().toString();
-                }
-
-                return Padding(
-                  padding: const EdgeInsets.only(top: 8.0),
-                  child: Text(
-                    text,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              interval: 1,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: const TextStyle(
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 12,
-                  ),
-                );
-              },
-              reservedSize: 40,
-            ),
-          ),
-        ),
-        borderData: FlBorderData(
-          show: true,
-          border: Border.all(color: Colors.grey.shade400),
-        ),
-        minX: 0,
-        maxX: data.length - 1.0,
-        minY: 0,
-        maxY: 10,
-        lineBarsData: [
-          LineChartBarData(
-            spots: List.generate(data.length, (index) {
-              return FlSpot(index.toDouble(), data[index].value);
-            }),
-            isCurved: true,
-            color: primaryPurple,
-            barWidth: 4,
-            isStrokeCapRound: true,
-            dotData: FlDotData(
-              show: true,
-              getDotPainter: (spot, percent, barData, index) {
-                return FlDotCirclePainter(
-                  radius: 6,
-                  color: primaryPurple,
-                  strokeWidth: 2,
-                  strokeColor: Colors.white,
-                );
-              },
-            ),
-            belowBarData: BarAreaData(
-              show: true,
-              color: primaryPurple.withOpacity(0.2),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildScrollableArea() {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: primaryPurple.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              'Words for today',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Text(
-                      'Future content will appear here with texts and checkboxes.',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
-                        fontSize: 16,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class GraphData {
-  final DateTime date;
-  final double value;
-
-  GraphData(this.date, this.value);
 }
