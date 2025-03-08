@@ -1,11 +1,6 @@
-# get_cursor() 
-# commit()
- 
-
-
 import sqlite3
 
-db="Backend/Database/disaster.db"
+db="backend/studyplanner.db"
 
 
 def get_cursor():
