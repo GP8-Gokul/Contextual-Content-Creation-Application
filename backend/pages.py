@@ -1,6 +1,7 @@
 import fitz
 import io
 from sklearn.feature_extraction.text import TfidfVectorizer
+import base64
 
 def get_keyword_pages(pdf_bytes, refined_keyword_content):
     doc = fitz.open(stream=pdf_bytes, filetype="pdf")
@@ -26,6 +27,6 @@ def get_keyword_pages(pdf_bytes, refined_keyword_content):
                 new_pdf.save(pdf_bytes_io)
                 new_pdf.close()
 
-                keyword_data[keyword].append(pdf_bytes_io.getvalue())
+                keyword_data[keyword].append(base64.b64encode(pdf_bytes_io.getvalue()).decode('utf-8'))
 
     return keyword_data

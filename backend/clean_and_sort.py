@@ -45,4 +45,5 @@ def clean_and_sort(pdf_bytes):
         lines = page_text.split("\n")
         text_lines.append(lines)
 
-    return text_lines
+    flat_text = [line for page in text_lines for line in page]
+    return flat_text

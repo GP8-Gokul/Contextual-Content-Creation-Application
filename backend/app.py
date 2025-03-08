@@ -2,10 +2,20 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import threading
 
-from backend.get_studyplan import get_studyplan
-from backend.process_content import process_content
-from backend.keyword_map import initialize_classifier
-from backend.refine_map import initialize_summarizer
+from get_studyplan import get_studyplan
+from process_content import process_content
+from keyword_map import initialize_classifier
+from refine_map import initialize_summarizer
+
+import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
+
+import tensorflow as tf
+tf.get_logger().setLevel('ERROR')
+
+import warnings
+warnings.filterwarnings("ignore", category=UserWarning)  
+
 
 def process_content_background(pdf_bytes, keywords,userid):
     process_content(pdf_bytes, keywords,userid)

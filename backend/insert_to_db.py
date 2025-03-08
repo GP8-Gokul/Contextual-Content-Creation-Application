@@ -1,6 +1,6 @@
 import json
 
-from backend.connect import commit, get_cursor
+from connect import commit, get_cursor
 
 def save_to_db(content,user_id):
     cursor=get_cursor()

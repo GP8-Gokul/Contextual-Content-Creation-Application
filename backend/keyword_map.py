@@ -18,7 +18,14 @@ def keyword_content_mapping(chunks, keywords):
         result = classifier(chunk, keywords, multi_label=True)
         for label, score in zip(result["labels"], result["scores"]):
             if score > 0.5:  
-                keyword_content[label].extend(chunk)
+                keyword_content.setdefault(label, []).append(chunk)
+
+    for key in keyword_content:
+        keyword_content[key] = ' '.join(keyword_content[key])
+
+    with open('backend/output.txt', 'w') as f:
+        for key, value in keyword_content.items():
+            f.write(f"{key}: {value}\n")
     return keyword_content
 
     
