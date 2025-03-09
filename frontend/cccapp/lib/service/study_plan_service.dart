@@ -24,6 +24,35 @@ class StudyPlanService {
     return [];
   }
 
+  // Check if a day-to-day plan already exists for the study plan
+  Future<String?> existingDayToDayPlanId(String studyPlanId) async {
+    try {
+      DatabaseEvent event = await ref.child("daytoday/$studyPlanId").once();
+      Map? data = event.snapshot.value as Map?;
+
+      if (data != null && data.isNotEmpty) {
+        // Return the first key (dayTodayId) found
+        return data.keys.cast<String>().first;
+      }
+      return null;
+    } catch (error) {
+      log("❌ Error checking existing plans: $error");
+      return null;
+    }
+  }
+
+  // Remove an existing day-to-day plan
+  Future<bool> removeDayToDayPlan(String studyPlanId, String dayToDayId) async {
+    try {
+      await ref.child("daytoday/$studyPlanId/$dayToDayId").remove();
+      log("✅ Removed day-to-day plan: $dayToDayId for study plan: $studyPlanId");
+      return true;
+    } catch (error) {
+      log("❌ Error removing day-to-day plan: $error");
+      return false;
+    }
+  }
+
   Future<bool> saveSchedule(String selectedPlanId, DateTime startDate,
       DateTime endDate, List<String> topics) async {
     if (startDate == null ||
@@ -35,6 +64,13 @@ class StudyPlanService {
     }
 
     try {
+      // Check if a plan already exists for this study plan
+      String? existingPlanId = await existingDayToDayPlanId(selectedPlanId);
+      if (existingPlanId != null) {
+        log("⚠️ A day-to-day plan already exists for this study plan: $existingPlanId");
+        return false;
+      }
+
       int totalDays = endDate.difference(startDate).inDays + 1;
       int totalTopics = topics.length;
       Map<String, Map<String, bool>> schedule = {};

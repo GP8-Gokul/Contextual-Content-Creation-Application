@@ -44,6 +44,8 @@ dependencies:
   flutter_pdfview: ^1.4.0
   dio: ^5.8.0+1
   table_calendar: ^3.2.0
+  flutter_launcher_icons: ^0.14.3
+  web_socket_channel: ^3.0.2
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +71,11 @@ flutter:
 
   assets:
     - assets/images/
+
+flutter_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/cccicon.jpg"
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

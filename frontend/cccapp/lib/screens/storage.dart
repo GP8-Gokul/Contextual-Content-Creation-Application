@@ -3,11 +3,13 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'dart:developer';
 import 'package:cccapp/service/auth/userid.dart';
+import 'package:cccapp/service/pdf_viewer.dart';
 import 'package:cccapp/widgets/bg.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
-import 'package:flutter_pdfview/flutter_pdfview.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:cccapp/widgets/storage_dropdown.dart';
+import 'package:cccapp/widgets/content_card.dart';
 
 class StorageScreen extends StatefulWidget {
   const StorageScreen({Key? key}) : super(key: key);
@@ -200,130 +202,6 @@ class _StorageScreenState extends State<StorageScreen>
     }
   }
 
-  Widget _buildDropdown({
-    required String hint,
-    required String? value,
-    required List<String> items,
-    required Function(String?) onChanged,
-    required bool enabled,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: darkPurple.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-      ),
-      child: Theme(
-        data: Theme.of(context).copyWith(
-          canvasColor: darkPurple,
-        ),
-        child: DropdownButtonHideUnderline(
-          child: DropdownButton<String>(
-            value: value,
-            hint: Text(
-              hint,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.8),
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            icon: Icon(
-              Icons.arrow_drop_down_circle,
-              color: Colors.white.withOpacity(0.8),
-            ),
-            isExpanded: true,
-            dropdownColor: darkPurple.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(16),
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            onChanged: enabled ? onChanged : null,
-            items: items.map((String item) {
-              return DropdownMenuItem<String>(
-                value: item,
-                child: Text(
-                  item,
-                  style: const TextStyle(
-                    color: Colors.white,
-                  ),
-                ),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContentCard({
-    required String title,
-    required String content,
-    IconData? icon,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (icon != null) Icon(icon, color: lightPurple, size: 22),
-              if (icon != null) const SizedBox(width: 10),
-              Text(
-                title,
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white.withOpacity(0.9),
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Text(
-            content,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.8),
-              height: 1.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -339,6 +217,22 @@ class _StorageScreenState extends State<StorageScreen>
             fontWeight: FontWeight.w900,
             letterSpacing: 1.2,
             fontSize: 22,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [darkPurple, primaryPurple.withOpacity(0.8)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
         ),
         leading: IconButton(
@@ -402,7 +296,7 @@ class _StorageScreenState extends State<StorageScreen>
                   ),
 
                   // Study Plan Dropdown
-                  _buildDropdown(
+                  StorageDropdown(
                     hint: "Select Study Plan",
                     value: selectedStudyPlan,
                     items: studyPlans.keys.toList(),
@@ -416,10 +310,11 @@ class _StorageScreenState extends State<StorageScreen>
                       });
                     },
                     enabled: true,
+                    darkPurple: darkPurple,
                   ),
 
                   // Topics Dropdown
-                  _buildDropdown(
+                  StorageDropdown(
                     hint: "Select Topic",
                     value: selectedTopic,
                     items: topics.keys.toList(),
@@ -429,6 +324,7 @@ class _StorageScreenState extends State<StorageScreen>
                       });
                     },
                     enabled: selectedStudyPlan != null,
+                    darkPurple: darkPurple,
                   ),
 
                   // Loading indicator
@@ -507,26 +403,29 @@ class _StorageScreenState extends State<StorageScreen>
                             const SizedBox(height: 16),
 
                             // Summary card
-                            _buildContentCard(
+                            ContentCard(
                               title: "Summary",
                               content: "${topics[selectedTopic]['summary']}",
                               icon: Icons.lightbulb_outline,
+                              lightPurple: lightPurple,
                             ),
 
                             // Elaboration card
-                            _buildContentCard(
+                            ContentCard(
                               title: "Elaboration",
                               content:
                                   "${topics[selectedTopic]['elaboration']}",
                               icon: Icons.auto_stories,
+                              lightPurple: lightPurple,
                             ),
 
                             // Study tips card
-                            _buildContentCard(
+                            ContentCard(
                               title: "Study Tips",
                               content:
                                   "Review the content above regularly. Try to explain the concepts in your own words. Connect this information with what you already know.",
                               icon: Icons.tips_and_updates,
+                              lightPurple: lightPurple,
                             ),
                           ],
                         ),
@@ -572,66 +471,6 @@ class _StorageScreenState extends State<StorageScreen>
                       ),
                     ),
                 ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class PDFViewerScreen extends StatelessWidget {
-  final String pdfPath;
-  final String topicName;
-
-  const PDFViewerScreen(
-      {Key? key, required this.pdfPath, required this.topicName})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF6A1B9A),
-        title: Text(topicName),
-        centerTitle: true,
-        elevation: 4,
-      ),
-      body: Stack(
-        children: [
-          PDFView(
-            filePath: pdfPath,
-            enableSwipe: true,
-            swipeHorizontal: true,
-            autoSpacing: true,
-            pageFling: true,
-            pageSnap: true,
-            defaultPage: 0,
-            fitPolicy: FitPolicy.BOTH,
-            preventLinkNavigation: false,
-          ),
-
-          // PDF loading indicator (bottom of screen)
-          Positioned(
-            bottom: 16,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF6A1B9A).withOpacity(0.8),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  "Loading PDF...",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
               ),
             ),
           ),

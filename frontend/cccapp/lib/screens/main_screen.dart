@@ -22,9 +22,9 @@ class _MainScreenState extends State<MainScreen> {
   static const Color darkPurple = Color(0xFF6A1B9A);
 
   List<String> _studyPlans = [];
-  List<String> _dayToDayPlans = [];
   String _selectedStudyPlan = "";
-  String _selectedDayToDayPlan = "";
+  String? _dayToDayPlan;
+  bool _isLoadingDayToDayPlan = false;
   List<TopicData> _topicData = [];
   int? _selectedTileIndex;
   Map<String, bool> _topicCompletionStatus = {};
@@ -43,20 +43,36 @@ class _MainScreenState extends State<MainScreen> {
     });
   }
 
-  void _fetchDayToDayPlans() async {
+  void _fetchDayToDayPlan() async {
     if (_selectedStudyPlan.isEmpty) return;
 
-    final plans = await _firebaseService.fetchDayToDayPlans(_selectedStudyPlan);
     setState(() {
-      _dayToDayPlans = plans;
+      _isLoadingDayToDayPlan = true;
+      _dayToDayPlan = null;
+    });
+
+    final plans = await _firebaseService.fetchDayToDayPlans(_selectedStudyPlan);
+
+    setState(() {
+      _isLoadingDayToDayPlan = false;
+      // If there's exactly one day-to-day plan, select it automatically
+      if (plans.length == 1) {
+        _dayToDayPlan = plans[0];
+        _fetchDayToDayTopics();
+      } else if (plans.isEmpty) {
+        _dayToDayPlan = null;
+      } else {
+        // This should not happen based on the requirements, but handling just in case
+        _dayToDayPlan = null;
+      }
     });
   }
 
   void _fetchDayToDayTopics() async {
-    if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
+    if (_selectedStudyPlan.isEmpty || _dayToDayPlan == null) return;
 
-    final fetchedTopics = await _firebaseService.fetchTopics(
-        _selectedStudyPlan, _selectedDayToDayPlan);
+    final fetchedTopics =
+        await _firebaseService.fetchTopics(_selectedStudyPlan, _dayToDayPlan!);
 
     setState(() {
       _topicData = fetchedTopics;
@@ -64,10 +80,10 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _updateTopicStatus(String date, String topic, bool completed) async {
-    if (_selectedStudyPlan.isEmpty || _selectedDayToDayPlan.isEmpty) return;
+    if (_selectedStudyPlan.isEmpty || _dayToDayPlan == null) return;
 
     await _firebaseService.updateTopicStatus(
-        _selectedStudyPlan, _selectedDayToDayPlan, date, topic, completed);
+        _selectedStudyPlan, _dayToDayPlan!, date, topic, completed);
 
     // Update local state
     setState(() {
@@ -102,7 +118,7 @@ class _MainScreenState extends State<MainScreen> {
           onSelected: (value) {
             if (value == 'logout') {
               logoutUser();
-              Navigator.of(context).pop('login_screen');
+              Navigator.of(context).pushNamed('login_screen');
             }
             if (value == 'storage') {
               Navigator.of(context).pushNamed('storage_screen');
@@ -224,53 +240,104 @@ class _MainScreenState extends State<MainScreen> {
                               if (newValue != null) {
                                 setState(() {
                                   _selectedStudyPlan = newValue;
-                                  _selectedDayToDayPlan = "";
+                                  _dayToDayPlan = null;
                                   _selectedTileIndex = null;
-                                  _fetchDayToDayPlans();
+                                  _topicData = [];
+                                  _fetchDayToDayPlan();
                                 });
                               }
                             },
                           ),
 
                           const SizedBox(height: 8),
-                          // Enhanced Day-to-Day Plan Selector
-                          if (_dayToDayPlans.isNotEmpty)
-                            EnhancedDropdown(
-                              items: _dayToDayPlans,
-                              selectedValue: _selectedDayToDayPlan.isEmpty
-                                  ? null
-                                  : _selectedDayToDayPlan,
-                              hintText: "Select Day-to-Day Plan",
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() {
-                                    _selectedDayToDayPlan = newValue;
-                                    _selectedTileIndex = null;
-                                    _fetchDayToDayTopics();
-                                  });
-                                }
-                              },
+
+                          // Day-to-Day Plan Status
+                          if (_selectedStudyPlan.isNotEmpty)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1,
+                                ),
+                              ),
+                              child: _isLoadingDayToDayPlan
+                                  ? const Center(
+                                      child: CircularProgressIndicator(
+                                        valueColor:
+                                            AlwaysStoppedAnimation<Color>(
+                                                primaryPurple),
+                                      ),
+                                    )
+                                  : _dayToDayPlan != null
+                                      ? Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            const Text(
+                                              "Day-to-Day Plan:",
+                                              style: TextStyle(
+                                                color: Colors.white70,
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _dayToDayPlan!,
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                      : const Text(
+                                          "No day-to-day plan exists for this study plan.",
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 14,
+                                          ),
+                                          textAlign: TextAlign.center,
+                                        ),
                             ),
 
                           const SizedBox(height: 8),
+
                           // Topics List with Enhanced Design
                           Expanded(
-                            child: TopicsList(
-                              selectedStudyPlan: _selectedStudyPlan,
-                              selectedDayToDayPlan: _selectedDayToDayPlan,
-                              topicData: _topicData,
-                              selectedTileIndex: _selectedTileIndex,
-                              topicCompletionStatus: _topicCompletionStatus,
-                              onTileSelected: (index) {
-                                setState(() {
-                                  _selectedTileIndex =
-                                      _selectedTileIndex == index
-                                          ? null
-                                          : index;
-                                });
-                              },
-                              onTopicStatusChanged: _updateTopicStatus,
-                            ),
+                            child: _dayToDayPlan != null
+                                ? TopicsList(
+                                    selectedStudyPlan: _selectedStudyPlan,
+                                    selectedDayToDayPlan: _dayToDayPlan!,
+                                    topicData: _topicData,
+                                    selectedTileIndex: _selectedTileIndex,
+                                    topicCompletionStatus:
+                                        _topicCompletionStatus,
+                                    onTileSelected: (index) {
+                                      setState(() {
+                                        _selectedTileIndex =
+                                            _selectedTileIndex == index
+                                                ? null
+                                                : index;
+                                      });
+                                    },
+                                    onTopicStatusChanged: _updateTopicStatus,
+                                  )
+                                : const Center(
+                                    child: Text(
+                                      "Select a study plan to view topics",
+                                      style: TextStyle(
+                                        color: Colors.white70,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ),
                           ),
                         ],
                       ),
