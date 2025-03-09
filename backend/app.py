@@ -3,7 +3,7 @@ from flask_cors import CORS
 import threading
 import json
 
-from firebase import addtofirebase
+from firebase import addidtouser, addtofirebase
 from get_studyplan import get_studyplan
 from process_content import process_content
 from keyword_map import initialize_classifier
@@ -39,9 +39,7 @@ def add():
     keywords = data['keywords']
     userid = data['userid']
 
-    cursor=get_cursor()
-    cursor.execute("INSERT INTO study_plan (user_id, content) VALUES (?, ?)", (userid, "wait"))
-    s_id = cursor.lastrowid
+    s_id = addidtouser(userid,s_id)
     commit()
 
     thread = threading.Thread(target=process_content_background, args=(pdf_bytes, keywords,userid,s_id))
