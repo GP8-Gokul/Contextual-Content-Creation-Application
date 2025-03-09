@@ -16,12 +16,14 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
   final StudyPlanService _studyPlanService = StudyPlanService();
 
   String? selectedPlanId;
+  String? existingDayToDayId;
   List<String> studyPlans = [];
   List<String> topics = [];
   DateTime? startDate;
   DateTime? endDate;
   bool isLoading = false;
   bool isCalendarVisible = false;
+  bool hasExistingPlan = false;
 
   // Animation controller for calendar
   late AnimationController _animationController;
@@ -32,6 +34,7 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
   static const Color primaryPurple = Color(0xFF6A1B9A);
   static const Color lightPurple = Color(0xFFBB86FC);
   static const Color accentColor = Color(0xFF03DAC5);
+  static const Color warningColor = Color(0xFFF44336);
 
   @override
   void initState() {
@@ -78,12 +81,22 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
   Future<void> _fetchTopics(String planId) async {
     setState(() {
       isLoading = true;
+      hasExistingPlan = false;
+      existingDayToDayId = null;
     });
 
     try {
+      // Check if a day-to-day plan already exists
+      final existingId = await _studyPlanService.existingDayToDayPlanId(planId);
+
       final fetchedTopics = await _studyPlanService.fetchTopics(planId);
+
       setState(() {
         topics = fetchedTopics;
+        if (existingId != null) {
+          hasExistingPlan = true;
+          existingDayToDayId = existingId;
+        }
       });
     } catch (e) {
       log("Error fetching topics: $e");
@@ -157,11 +170,89 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
 
       if (success) {
         _showSnackBar("Study plan scheduled successfully!");
+        // Refresh to show the plan exists now
+        _fetchTopics(selectedPlanId!);
       } else {
-        _showSnackBar("Failed to schedule study plan. Please try again.");
+        if (hasExistingPlan) {
+          _showSnackBar(
+              "A plan already exists for this study plan. Please remove it first.");
+          _showRemoveExistingPlanDialog();
+        } else {
+          _showSnackBar("Failed to schedule study plan. Please try again.");
+        }
       }
     } catch (e) {
       log("Error scheduling topics: $e");
+      _showSnackBar("An error occurred. Please try again.");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  void _showRemoveExistingPlanDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Existing Plan Found"),
+          content: Text(
+              "A day-to-day plan already exists for this study plan. Would you like to remove it and create a new one?"),
+          actions: [
+            TextButton(
+              child: Text("Cancel"),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            TextButton(
+              child: Text("Remove & Create New"),
+              onPressed: () {
+                Navigator.of(context).pop();
+                _removeExistingPlan();
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: warningColor,
+              ),
+            ),
+          ],
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(15),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _removeExistingPlan() async {
+    if (selectedPlanId == null || existingDayToDayId == null) {
+      _showSnackBar("No existing plan to remove.");
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final success = await _studyPlanService.removeDayToDayPlan(
+        selectedPlanId!,
+        existingDayToDayId!,
+      );
+
+      if (success) {
+        setState(() {
+          hasExistingPlan = false;
+          existingDayToDayId = null;
+        });
+        _showSnackBar(
+            "Existing plan removed successfully. You can now create a new one.");
+      } else {
+        _showSnackBar("Failed to remove existing plan. Please try again.");
+      }
+    } catch (e) {
+      log("Error removing existing plan: $e");
       _showSnackBar("An error occurred. Please try again.");
     } finally {
       setState(() {
@@ -204,6 +295,7 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
             ],
           ),
         ),
+        centerTitle: true,
         elevation: 0,
         backgroundColor: Colors.transparent,
         leading: IconButton(
@@ -220,7 +312,7 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
           },
         ),
         title: Text(
-          'Study Plan Scheduler',
+          'DAY TO DAY PLANNER',
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
@@ -243,6 +335,10 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
                     _buildSectionTitle('Select a Study Plan', Icons.book),
                     SizedBox(height: 12),
                     _buildStudyPlanDropdown(),
+
+                    // Show warning if plan exists
+                    if (hasExistingPlan) _buildExistingPlanWarning(),
+
                     SizedBox(height: 24),
 
                     // Section 2: Date Range Selection
@@ -289,6 +385,34 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
                 ),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExistingPlanWarning() {
+    return Container(
+      margin: EdgeInsets.only(top: 12),
+      padding: EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: warningColor.withOpacity(0.1),
+        border: Border.all(color: warningColor, width: 1),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.warning_amber_rounded, color: warningColor),
+          SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              "A day-to-day plan already exists for this study plan.",
+              style: TextStyle(color: Colors.black87),
+            ),
+          ),
+          TextButton(
+            onPressed: () => _showRemoveExistingPlanDialog(),
+            child: Text("REMOVE", style: TextStyle(color: warningColor)),
+          ),
         ],
       ),
     );
@@ -473,27 +597,37 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
     bool isEnabled = selectedPlanId != null &&
         startDate != null &&
         endDate != null &&
-        topics.isNotEmpty;
+        topics.isNotEmpty &&
+        !hasExistingPlan;
+
+    String buttonText =
+        hasExistingPlan ? "Remove Existing Plan First" : "Generate Study Plan";
 
     return Center(
       child: ElevatedButton(
-        onPressed: isEnabled ? _scheduleTopics : null,
+        onPressed: isEnabled
+            ? _scheduleTopics
+            : (hasExistingPlan ? _showRemoveExistingPlanDialog : null),
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 24),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.auto_awesome),
+              Icon(hasExistingPlan
+                  ? Icons.warning_amber_rounded
+                  : Icons.auto_awesome),
               SizedBox(width: 8),
               Text(
-                "Generate Study Plan",
+                buttonText,
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
             ],
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: isEnabled ? accentColor : Colors.grey[400],
+          backgroundColor: hasExistingPlan
+              ? warningColor
+              : (isEnabled ? accentColor : Colors.grey[400]),
           foregroundColor: Colors.black87,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(30),

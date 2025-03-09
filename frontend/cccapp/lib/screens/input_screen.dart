@@ -6,6 +6,7 @@ import 'package:cccapp/widgets/error_message.dart';
 import 'package:cccapp/widgets/keyword_section.dart';
 import 'package:cccapp/widgets/submit_button.dart';
 import 'package:cccapp/service/input_service.dart';
+import 'package:cccapp/service/auth/userid.dart';
 import 'dart:io';
 
 class InputScreen extends StatefulWidget {
@@ -229,7 +230,13 @@ class _InputScreenState extends State<InputScreen>
                           pdf: _selectedPDF!,
                           keywords: _keywords,
                           userId:
-                              'userId', // You may need to get this from user context
+                              getUserId()!, // You may need to get this from user context
+                          onOutputReady: (output) {
+                            // Handle the output
+                          },
+                          onError: (error) {
+                            // Handle the error
+                          },
                         );
                       }
                     },
