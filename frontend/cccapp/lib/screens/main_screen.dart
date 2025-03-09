@@ -118,7 +118,10 @@ class _MainScreenState extends State<MainScreen> {
           onSelected: (value) {
             if (value == 'logout') {
               logoutUser();
-              Navigator.of(context).pushNamed('login_screen');
+              Navigator.of(context).pushNamedAndRemoveUntil(
+                'login_screen',
+                (Route<dynamic> route) => false,
+              );
             }
             if (value == 'storage') {
               Navigator.of(context).pushNamed('storage_screen');

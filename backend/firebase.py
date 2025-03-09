@@ -8,6 +8,18 @@ firebase_admin.initialize_app(cred, {
 
 def addidtouser(userid, s_id=None):
     try:
+        user_ref = db.reference(f'users/{userid}')
+        user_data = user_ref.get()
+        
+        if user_data is None:
+            user_ref.set({
+                'studyPlans': {}
+            })
+        elif 'studyPlans' not in user_data:
+            user_ref.update({
+                'studyPlans': {}
+            })
+            
         ref = db.reference(f'users/{userid}/studyPlans')
         new_ref = ref.push(True) 
         return new_ref.key 
@@ -44,4 +56,3 @@ if __name__ == "__main__":
     # print(result)  
     result = addidtouser(test_userid, test_s_id)
     print(result)
-

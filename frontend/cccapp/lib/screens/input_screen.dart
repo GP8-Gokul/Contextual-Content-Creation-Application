@@ -231,12 +231,6 @@ class _InputScreenState extends State<InputScreen>
                           keywords: _keywords,
                           userId:
                               getUserId()!, // You may need to get this from user context
-                          onOutputReady: (output) {
-                            // Handle the output
-                          },
-                          onError: (error) {
-                            // Handle the error
-                          },
                         );
                       }
                     },
