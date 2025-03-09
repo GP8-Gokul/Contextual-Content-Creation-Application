@@ -38,7 +38,7 @@ def process_content(pdf_base64, keywords,userid,s_id):
     for keyword in refined_keyword_content:
         combined_dict[keyword] = {
             'summary': refined_keyword_content[keyword],
-            'pages': keyword_pages.get(keyword, []),
+            'pdfpages': keyword_pages.get(keyword, []),
             'elaboration': keyword_elaboration.get(keyword, "")
         }
     print("combined_dict created")

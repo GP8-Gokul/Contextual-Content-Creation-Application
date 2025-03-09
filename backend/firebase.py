@@ -26,22 +26,22 @@ def addtofirebase(userid, s_id, content):
 
 if __name__ == "__main__":
     test_userid = "2erBRngXiweBgYpkkn9j35Ms6Y32"
-    test_s_id = "1"
-    # test_content = {
-    #     "Frog":{
-    #         "Summary": "animal",
-    #         "Elaboration":"bird",
-    #         "pages": "crow"
-    #     },
-    #     "Dog":{
-    #         "Summary": "animal",
-    #         "Elaboration":"bird",
-    #         "pages": "king"
-    #     },
-    # }
+    test_s_id = "-OKvBwvMGQFFP3DHjEUS"
+    test_content = {
+        "Frog":{
+            "Summary": "animal",
+            "Elaboration":"bird",
+            "pages": "crow"
+        },
+        "Dog":{
+            "Summary": "animal",
+            "Elaboration":"bird",
+            "pages": "king"
+        },
+    }
 
-    # result = addtofirebase(test_userid, test_s_id, test_content)
-    # print(result)  
-    result = addidtouser(test_userid, test_s_id)
-    print(result)
+    result = addtofirebase(test_userid, test_s_id, test_content)
+    print(result)  
+    # result = addidtouser(test_userid, test_s_id)
+    # print(result)
 
