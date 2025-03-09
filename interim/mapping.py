@@ -19,7 +19,7 @@ def main():
     
     keywords = ["corrosion", "combination reaction"]
 
-    with open("interim/cleaned.txt", "r", encoding="utf-8") as file:
+    with open("interim/cleanedcgip.txt", "r", encoding="utf-8") as file:
         content = file.read().strip()
     
     chunks = [chunk.split("\n") for chunk in content.split("\n\n") if chunk.strip()]
@@ -29,7 +29,7 @@ def main():
     for keyword in keyword_content:
         keyword_content[keyword] = list(dict.fromkeys(keyword_content[keyword]))
 
-    with open("interim/keyword_content.txt", "w", encoding="utf-8") as text_file:
+    with open("interim/keyword_contentcgip.txt", "w", encoding="utf-8") as text_file:
         for keyword, texts in keyword_content.items():
             text_file.write(f"Keyword: {keyword}\n")
             for text in texts:
@@ -40,7 +40,7 @@ def main():
     for keyword in keyword_content:
         keyword_content[keyword] = " ".join(keyword_content[keyword])
 
-    with open("interim/keyword_content.json", "w", encoding="utf-8") as json_file:
+    with open("interim/keyword_contentcgip.json", "w", encoding="utf-8") as json_file:
         json.dump(keyword_content, json_file, ensure_ascii=False, indent=4)
 
 if __name__ == "__main__":

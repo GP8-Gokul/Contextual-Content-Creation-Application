@@ -1,7 +1,8 @@
 import fitz
+import io
 
 def remove_images_and_vectors(input_pdf):
-    doc = fitz.open(input_pdf)
+    doc = doc = fitz.open(stream=input_pdf, filetype="pdf")
 
     for page_num in range(doc.page_count):
         page = doc.load_page(page_num)
@@ -23,8 +24,8 @@ def remove_images_and_vectors(input_pdf):
     return doc
 
 
-def clean_and_sort():
-    doc = remove_images_and_vectors(pdf_path)
+def clean_and_sort(pdf_bytes):
+    doc = remove_images_and_vectors(pdf_bytes)
     text_lines = []
     
     for page_num in range(doc.page_count):
@@ -44,4 +45,5 @@ def clean_and_sort():
         lines = page_text.split("\n")
         text_lines.append(lines)
 
-    return text_lines
+    flat_text = [line for page in text_lines for line in page]
+    return flat_text
