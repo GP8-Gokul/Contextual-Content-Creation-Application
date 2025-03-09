@@ -7,13 +7,10 @@ firebase_admin.initialize_app(cred, {
 })
 
 
-def add_to_firebase(userid, s_id, content):
+def addtofirebase(userid, s_id, content):
     try:
-        ref = db.reference(f'studyplan/{userid}')  
-        ref.update({
-            's_id': s_id,
-            'content': content
-        })
+        ref = db.reference(f'users/{userid}/studyplan/{s_id}')  
+        ref.update({'content': content})
         return "Data added successfully!"
     except Exception as e:
         return f"Error: {e}"
@@ -21,7 +18,18 @@ def add_to_firebase(userid, s_id, content):
 if __name__ == "__main__":
     test_userid = "2erBRngXiweBgYpkkn9j35Ms6Y32"
     test_s_id = "1"
-    test_content = "Complete Python project by Sunday"
+    test_content = {
+        "Frog":{
+            "Summary": "animal",
+            "Elaboration":"bird",
+            "pages": "crow"
+        },
+        "Dog":{
+            "Summary": "animal",
+            "Elaboration":"bird",
+            "pages": "king"
+        },
+    }
 
-    result = add_to_firebase(test_userid, test_s_id, test_content)
+    result = addtofirebase(test_userid, test_s_id, test_content)
     print(result)  

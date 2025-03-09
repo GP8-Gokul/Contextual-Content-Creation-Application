@@ -3,6 +3,7 @@ from flask_cors import CORS
 import threading
 import json
 
+from firebase import addtofirebase
 from get_studyplan import get_studyplan
 from process_content import process_content
 from keyword_map import initialize_classifier
@@ -22,7 +23,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 def process_content_background(pdf_bytes, keywords,userid,s_id):
     content = process_content(pdf_bytes, keywords,userid,s_id)
-    addtofirbase(userid,s_id , content)
+    addtofirebase(userid,s_id , content)
 
 app = Flask(__name__)
 CORS(app)
