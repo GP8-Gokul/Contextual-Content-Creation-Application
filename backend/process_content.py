@@ -46,6 +46,8 @@ def process_content(pdf_base64, keywords,userid,s_id):
     save_to_db(combined_dict, userid,s_id)
     print("save_to_db executed")
 
+    return combined_dict
+
 
 
 

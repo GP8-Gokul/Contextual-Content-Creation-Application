@@ -21,7 +21,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def process_content_background(pdf_bytes, keywords,userid,s_id):
-    process_content(pdf_bytes, keywords,userid,s_id)
+    content = process_content(pdf_bytes, keywords,userid,s_id)
+    addtofirbase(userid,s_id , content)
 
 app = Flask(__name__)
 CORS(app)
