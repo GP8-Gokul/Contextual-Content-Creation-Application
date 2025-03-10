@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const url = 'https://127.0.0.1:3000';
+const url = 'http://10.0.2.2:5000';
 dynamic userId;
 dynamic userName;
 

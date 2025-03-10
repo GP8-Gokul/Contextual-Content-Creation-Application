@@ -14,7 +14,7 @@ class PDFService {
       final Uint8List pdfBytes = await pdf.readAsBytes();
       final String encodedPdf = base64Encode(pdfBytes);
       final Map<String, dynamic> body = {
-        'userId': userId,
+        'userid': userId,
         'pdf': encodedPdf,
         'keywords': keywords,
       };

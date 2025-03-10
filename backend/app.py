@@ -9,8 +9,6 @@ from process_content import process_content
 from keyword_map import initialize_classifier
 from refine_map import initialize_summarizer
 
-from connect import commit, get_cursor
-
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
 
@@ -39,8 +37,7 @@ def add():
     keywords = data['keywords']
     userid = data['userid']
 
-    s_id = addidtouser(userid,s_id)
-    commit()
+    s_id = addidtouser(userid)
 
     thread = threading.Thread(target=process_content_background, args=(pdf_bytes, keywords,userid,s_id))
     thread.start()
