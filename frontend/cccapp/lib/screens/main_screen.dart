@@ -8,6 +8,7 @@ import 'package:cccapp/widgets/enhanced_dropdown.dart';
 import 'package:cccapp/widgets/topic_list.dart';
 import 'package:cccapp/widgets/glassmorphic_scrollable_area.dart';
 import 'package:cccapp/service/firebase_service.dart';
+import 'package:cccapp/service/auth/userid.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({Key? key}) : super(key: key);
@@ -29,6 +30,7 @@ class _MainScreenState extends State<MainScreen> {
   int? _selectedTileIndex;
   Map<String, bool> _topicCompletionStatus = {};
   final FirebaseService _firebaseService = FirebaseService();
+  String userId = getUserId()!;
 
   @override
   void initState() {
@@ -37,7 +39,7 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _fetchStudyPlans() async {
-    final plans = await _firebaseService.fetchStudyPlans();
+    final plans = await _firebaseService.fetchStudyPlans(userId);
     setState(() {
       _studyPlans = plans;
     });

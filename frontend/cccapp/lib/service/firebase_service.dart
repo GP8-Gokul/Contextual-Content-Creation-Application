@@ -3,17 +3,40 @@ import 'package:intl/intl.dart';
 import 'package:cccapp/models/topic_data.dart';
 
 class FirebaseService {
-  // Fetch all study plans
-  Future<List<String>> fetchStudyPlans() async {
-    DatabaseReference studyPlanRef =
-        FirebaseDatabase.instance.ref("studyPlans");
-    DataSnapshot snapshot = await studyPlanRef.get();
+  // Fetch study plans for a specific user
+  Future<List<String>> fetchStudyPlans(String userId) async {
+    if (userId.isEmpty) return [];
 
-    if (snapshot.exists) {
-      List plans = (snapshot.value as Map).keys.toList();
-      return plans.cast<String>();
+    // First get the study plan IDs associated with this user
+    DatabaseReference userStudyPlansRef =
+        FirebaseDatabase.instance.ref("users/$userId/studyPlans");
+
+    DataSnapshot userSnapshot = await userStudyPlansRef.get();
+
+    if (!userSnapshot.exists) {
+      return [];
     }
-    return [];
+
+    // Extract the study plan IDs from the user's data
+    Map<String, dynamic> userStudyPlans =
+        Map<String, dynamic>.from(userSnapshot.value as Map);
+    List<String> studyPlanIds = userStudyPlans.keys.toList();
+
+    // Now fetch the actual study plans that match these IDs
+    List<String> accessiblePlans = [];
+
+    for (String planId in studyPlanIds) {
+      DatabaseReference studyPlanRef =
+          FirebaseDatabase.instance.ref("studyPlans/$planId");
+
+      DataSnapshot planSnapshot = await studyPlanRef.get();
+
+      if (planSnapshot.exists) {
+        accessiblePlans.add(planId);
+      }
+    }
+
+    return accessiblePlans;
   }
 
   // Fetch day-to-day plans for a specific study plan
