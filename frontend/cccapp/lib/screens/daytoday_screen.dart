@@ -1,9 +1,11 @@
 import 'dart:developer';
+import 'package:cccapp/service/auth/userid.dart';
 import 'package:cccapp/widgets/bg.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:cccapp/service/study_plan_service.dart';
+import 'package:cccapp/service/firebase_service.dart';
 
 class DaytoDayScreen extends StatefulWidget {
   static const routeName = 'daytoday_screen';
@@ -14,11 +16,13 @@ class DaytoDayScreen extends StatefulWidget {
 class _DaytoDayScreenState extends State<DaytoDayScreen>
     with SingleTickerProviderStateMixin {
   final StudyPlanService _studyPlanService = StudyPlanService();
+  final FirebaseService _firebaseService = FirebaseService();
 
   String? selectedPlanId;
   String? existingDayToDayId;
   List<String> studyPlans = [];
   List<String> topics = [];
+  String? currentUserId; // Added to store the current user's ID
   DateTime? startDate;
   DateTime? endDate;
   bool isLoading = false;
@@ -39,7 +43,7 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
   @override
   void initState() {
     super.initState();
-    _fetchStudyPlans();
+    _getCurrentUserAndPlans();
 
     // Setup animation for calendar
     _animationController = AnimationController(
@@ -58,13 +62,41 @@ class _DaytoDayScreenState extends State<DaytoDayScreen>
     super.dispose();
   }
 
-  Future<void> _fetchStudyPlans() async {
+  // New method to get current user and their study plans
+  Future<void> _getCurrentUserAndPlans() async {
     setState(() {
       isLoading = true;
     });
 
     try {
-      final plans = await _studyPlanService.fetchStudyPlans();
+      // Get current user ID
+      final userId = getUserId();
+
+      if (userId != null) {
+        currentUserId = userId; // Store the userId
+        await _fetchStudyPlans(userId);
+      } else {
+        _showSnackBar("User authentication error. Please login again.");
+      }
+    } catch (e) {
+      log("Error getting current user: $e");
+      _showSnackBar("Authentication error. Please try again.");
+    } finally {
+      setState(() {
+        isLoading = false;
+      });
+    }
+  }
+
+  // Updated to fetch only user's study plans
+  Future<void> _fetchStudyPlans(String userId) async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      // Use the FirebaseService to fetch only study plans for this user
+      final plans = await _firebaseService.fetchStudyPlans(userId);
       setState(() {
         studyPlans = plans;
       });
