@@ -1,55 +1,66 @@
 import re
 from pdfminer.high_level import extract_pages
-from pdfminer.layout import LTTextBoxHorizontal, LTTextLineHorizontal
+from pdfminer.layout import LTTextBox, LTTextLine
 
 def clean_text(text):
-    """Fixes duplicate words, broken words, and formatting issues."""
-    lines = text.split("\n")
-    cleaned_lines = []
-    prev_words = set()  # Store previously seen words to remove duplicates
+    """Cleans extracted text by removing unwanted duplicates, fixing formatting, and preserving structure."""
+    
+    # Replace 'n' at the beginning of lines with '* ' (bullet points)
+    text = re.sub(r'(?m)^n\s+', '* ', text)  # `(?m)` makes `^` match start of each line
 
-    for line in lines:
-        line = line.strip()
+    # Remove repeated lines (headings, figure labels, activity names, etc.)
+    text = re.sub(r'(^|\n)(.+)(\n\2)+', r'\1\2', text)  # Remove exact repeated lines
+    
+    # Fix words split across lines (common in PDFs with justified text)
+    text = re.sub(r'(\w+)-\n(\w+)', r'\1\2', text)  # Merge hyphenated words split at line breaks
+    
+    # Normalize excessive spaces and newlines
+    text = re.sub(r' {2,}', ' ', text)  # Reduce multiple spaces to a single space
+    text = re.sub(r'\n{3,}', '\n\n', text)  # Limit excessive blank lines to max 2
 
-        # Merge broken words (e.g., "EQUA\nTIONS" → "EQUATIONS")
-        line = re.sub(r"(\w+)-?\n(\w+)", r"\1\2", line)
-
-        # Remove duplicate words (e.g., "1.1 CHEMIC\n1.1 CHEMIC" → "1.1 CHEMIC")
-        words = line.split()
-        new_words = [w for w in words if w not in prev_words]
-        
-        if new_words:
-            cleaned_line = " ".join(new_words)
-            cleaned_lines.append(cleaned_line)
-            prev_words.update(new_words)  # Store seen words
-
-    return "\n\n".join(cleaned_lines)
+    return text.strip()
 
 def extract_text_best(pdf_path):
-    """Extracts properly formatted text from a PDF using PDFMiner."""
+    """Extracts properly formatted text from any PDF while removing duplicates and fixing layout issues."""
     text = []
     seen_lines = set()
 
     for page_layout in extract_pages(pdf_path):
         for element in page_layout:
-            if isinstance(element, (LTTextBoxHorizontal, LTTextLineHorizontal)):  
+            if isinstance(element, (LTTextBox, LTTextLine)):  
                 line = element.get_text().strip()
 
-                # Remove exact duplicate lines
+                # Avoid blank lines and exact duplicates
                 if line and line not in seen_lines:
                     seen_lines.add(line)
                     text.append(line)
 
-    formatted_text = "\n\n".join(text)
-    return clean_text(formatted_text)
+    return clean_text("\n\n".join(text))
 
 # Run the function
 pdf_path = "interim/testfile.pdf"
 formatted_text = extract_text_best(pdf_path)
 
-# Save output to a file
-output_path = "interim/output2.txt"
-with open(output_path, "w", encoding="utf-8") as file:
-    file.write(formatted_text)
+# Print or save output
 
-print(f"✅ Text extracted and saved to {output_path}")
+# Split the formatted text into a list of paragraphs
+paragraphs = formatted_text.split('\n\n')
+
+# Filter out paragraphs with length less than 6
+filtered_paragraphs = []
+for paragraph in paragraphs:
+    lines = paragraph.split('\n')
+    filtered_lines = []
+    for line in lines:
+        if len(line) >= 6:
+            filtered_lines.append(line)
+    if filtered_lines:
+        filtered_paragraphs.append('\n'.join(filtered_lines))
+paragraphs = filtered_paragraphs
+
+# Save each paragraph as a new element in the output file
+with open("interim/output2.txt", "w") as file:
+    for paragraph in paragraphs:
+        file.write(paragraph + '\n\n')
+    print("Text extracted and saved to output2.txt")
+
