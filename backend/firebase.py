@@ -22,6 +22,7 @@ def addidtouser(userid, s_id=None):
             
         ref = db.reference(f'users/{userid}/studyPlans')
         new_ref = ref.push(True) 
+        print(new_ref.key)
         return new_ref.key 
 
     except Exception as e:

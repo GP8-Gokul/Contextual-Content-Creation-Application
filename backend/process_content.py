@@ -1,6 +1,7 @@
 import base64
 import fitz
 
+from minerextraction import extraction
 from chunks import convert_to_chunks
 from clean_and_sort import clean_and_sort
 from elaboration import get_elaboration
@@ -10,16 +11,22 @@ from pages import get_keyword_pages
 from refine_map import refine_mapping
 from refined_text import refined_text_re
 
+ROUTE = 1
+
 def process_content(pdf_base64, keywords,userid,s_id):
 
-    pdf_bytes = base64.b64decode(pdf_base64)
-    cleaned_text = clean_and_sort(pdf_bytes)
-    print("clean_and_sort executed")
-    
-    refined_text = refined_text_re(cleaned_text)
-    print("refined_text_re executed")
-    
-    chunks = convert_to_chunks(refined_text)
+    if ROUTE == 1:
+        pdf_bytes = base64.b64decode(pdf_base64)
+        extracted_text = extraction(pdf_bytes)
+        print("extraction executed")
+        chunks = convert_to_chunks(extracted_text)
+    elif ROUTE == 2:
+        cleaned_text = clean_and_sort(pdf_bytes)
+        print("clean_and_sort executed")
+        refined_text = refined_text_re(cleaned_text)
+        print("refined_text_re executed")
+        chunks = convert_to_chunks(refined_text)
+
     print("convert_to_chunks executed")
     
     keyword_content = keyword_content_mapping(chunks, keywords)
