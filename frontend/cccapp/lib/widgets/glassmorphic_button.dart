@@ -17,7 +17,7 @@ class GlassmorphicButton extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: const Color.fromARGB(255, 161, 10, 161).withOpacity(0.1),
+          color: const Color.fromARGB(255, 161, 10, 161).withOpacity(0.2),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: Colors.white.withOpacity(0.2),

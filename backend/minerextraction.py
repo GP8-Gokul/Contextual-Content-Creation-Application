@@ -50,5 +50,5 @@ def extraction(pdf_bytes):
     paragraphs = filtered_paragraphs
 
     paragraphs_as_lines = [line for paragraph in paragraphs for line in paragraph.split('\n')]
-    return paragraphs_as_lines
+    return paragraphs
 

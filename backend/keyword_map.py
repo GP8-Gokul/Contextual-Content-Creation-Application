@@ -9,7 +9,7 @@ from transformers import pipeline
 
 def initialize_classifier():
     global classifier 
-    classifier = pipeline("zero-shot-classification", model="MoritzLaurer/mDeBERTa-v3-base-mnli-xnli")
+    classifier = pipeline("zero-shot-classification", model="MoritzLaurer/DeBERTa-v3-base-mnli-fever-anli")
 
 def keyword_content_mapping(chunks, keywords):
     keyword_content = {}

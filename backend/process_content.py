@@ -10,6 +10,9 @@ from keyword_map import keyword_content_mapping
 from pages import get_keyword_pages
 from refine_map import refine_mapping
 from refined_text import refined_text_re
+from check_keyword import extract_relevant_paragraphs_with_neighbors
+import json
+import sys
 
 ROUTE = 1
 
@@ -17,9 +20,15 @@ def process_content(pdf_base64, keywords,userid,s_id):
 
     if ROUTE == 1:
         pdf_bytes = base64.b64decode(pdf_base64)
-        extracted_text = extraction(pdf_bytes)
+        paragraphs = extraction(pdf_bytes)
         print("extraction executed")
-        chunks = convert_to_chunks(extracted_text)
+        keyword_content ={}
+        for keyword in keywords:
+            keyword_content [keyword]=extract_relevant_paragraphs_with_neighbors(paragraphs, keyword)
+        with open("backend/keyword.json", 'w') as f:
+            json.dump(keyword_content, f)
+        print("keyword_content stored in keyword.json")
+        sys.exit("Exiting the program after storing keyword_content in keyword.json")
     elif ROUTE == 2:
         cleaned_text = clean_and_sort(pdf_bytes)
         print("clean_and_sort executed")
@@ -29,10 +38,11 @@ def process_content(pdf_base64, keywords,userid,s_id):
 
     print("convert_to_chunks executed")
     
-    keyword_content = keyword_content_mapping(chunks, keywords)
+    #keyword_content = keyword_content_mapping(chunks, keywords)
     print("keyword_content_mapping executed")
     
-    refined_keyword_content = refine_mapping(keyword_content)
+    refined_keyword_content = keyword_content
+    #refined_keyword_content = refine_mapping(keyword_content )
     print("refine_mapping executed")
     
     keyword_pages = get_keyword_pages(pdf_bytes, refined_keyword_content)
