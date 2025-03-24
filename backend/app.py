@@ -4,10 +4,8 @@ import threading
 import json
 
 from firebase import addidtouser, addtofirebase
-from get_studyplan import get_studyplan
 from process_content import process_content
-from keyword_map import initialize_classifier
-from refine_map import initialize_summarizer
+
 
 import os
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3' 
@@ -43,18 +41,6 @@ def add():
     thread.start()
 
     return jsonify({"message": "processing", "s_id": s_id})
-
-@app.route('/studyplan', methods=['POST'])
-def studyplan():
-    data = request.get_json()
-    user_id = data['user_id']
-    s_id = data['s_id']
-
-    data = get_studyplan(user_id,s_id)
-    response = json.loads(data)
-    return jsonify(response)
     
 if __name__ == '__main__':
-    initialize_classifier()
-    initialize_summarizer()
     app.run(debug=True)

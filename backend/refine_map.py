@@ -1,19 +1,30 @@
-from transformers import pipeline, AutoTokenizer
+from sklearn.feature_extraction.text import TfidfVectorizer
+import numpy as np
 
-def initialize_summarizer():
-    global summarizer, tokenizer
-    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
-    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+def refine_mapping(keyword_content, top_percent=40):
+    refined_content = {}
 
-def chunk_text(text, max_tokens=1000):
-    tokens = tokenizer.encode(text, add_special_tokens=False)  
-    chunks = [tokens[i:i + max_tokens] for i in range(0, len(tokens), max_tokens)]
-
-    return [tokenizer.decode(chunk, skip_special_tokens=True) for chunk in chunks]  
-
-def refine_mapping(keyword_content):
     for keyword, content in keyword_content.items():
-        chunks = chunk_text(content, max_tokens=1000)
-        summaries = [summarizer(chunk)[0]['summary_text'] for chunk in chunks]
-        keyword_content[keyword] = " ".join(summaries)  
-    return keyword_content
+        if isinstance(content, list):  
+            content = " ".join(content)  
+
+        sentences = content.split(". ")
+        if len(sentences) <= 3:  
+            continue
+
+        # TF-IDF Vectorizer for sentence importance
+        vectorizer = TfidfVectorizer(stop_words="english")
+        sentence_vectors = vectorizer.fit_transform(sentences)
+        keyword_vector = vectorizer.transform([keyword])
+
+        # Compute cosine similarity between keyword and sentences
+        similarities = sentence_vectors.dot(keyword_vector.T).toarray().flatten()
+
+        # Get top-ranked sentences
+        num_sentences = max(1, int(len(sentences) * (top_percent / 100)))
+        top_indices = np.argsort(similarities)[-num_sentences:][::-1]
+
+        top_sentences = [sentences[i] for i in sorted(top_indices)]
+        refined_content[keyword] = ". ".join(top_sentences)
+
+    return refined_content
