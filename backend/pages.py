@@ -39,3 +39,10 @@ def get_keyword_pages(pdf_bytes, refined_keyword_content, threshold=0.3, keyword
             keyword_data[keyword] = None  # No relevant pages found
 
     return keyword_data
+
+def page_in_doc(doc, page_num):
+    """Check if a page is already inserted to avoid duplicates."""
+    for i in range(doc.page_count):
+        if doc.load_page(i).get_text() == doc.load_page(page_num).get_text():
+            return True
+    return False
