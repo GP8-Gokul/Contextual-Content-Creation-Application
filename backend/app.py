@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import threading
-import json
 
+from refine_map import initialize_summarizer
 from firebase import addidtouser, addtofirebase
 from process_content import process_content
 
@@ -43,4 +43,5 @@ def add():
     return jsonify({"message": "processing", "s_id": s_id})
     
 if __name__ == '__main__':
+    initialize_summarizer()
     app.run(debug=True)

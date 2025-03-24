@@ -1,30 +1,27 @@
-from sklearn.feature_extraction.text import TfidfVectorizer
-import numpy as np
+from transformers import pipeline, AutoTokenizer
 
-def refine_mapping(keyword_content, top_percent=40):
+def initialize_summarizer():
+    global summarizer, tokenizer
+    summarizer = pipeline("summarization", model="facebook/bart-large-cnn")
+    tokenizer = AutoTokenizer.from_pretrained("facebook/bart-large-cnn")
+
+def refine_mapping(keyword_content, num_paragraphs=3, max_tokens=512):
     refined_content = {}
 
     for keyword, content in keyword_content.items():
-        if isinstance(content, list):  
-            content = " ".join(content)  
+        if isinstance(content, list):
+            content = " ".join(content)
 
-        sentences = content.split(". ")
-        if len(sentences) <= 3:  
+        paragraphs = [para.strip() for para in content.split("\n") if len(para.strip()) > 5]
+        relevant_paragraphs = [para for para in paragraphs if keyword.lower() in para.lower()]
+
+        if not relevant_paragraphs:
             continue
 
-        # TF-IDF Vectorizer for sentence importance
-        vectorizer = TfidfVectorizer(stop_words="english")
-        sentence_vectors = vectorizer.fit_transform(sentences)
-        keyword_vector = vectorizer.transform([keyword])
+        chunks = [" ".join(relevant_paragraphs[i:i + num_paragraphs]) for i in range(0, len(relevant_paragraphs), num_paragraphs)]
+        summaries = [summarizer(chunk, max_length=max_tokens, min_length=50, do_sample=False)[0]["summary_text"]
+                     for chunk in chunks if len(tokenizer.encode(chunk, add_special_tokens=False)) >= 50]
 
-        # Compute cosine similarity between keyword and sentences
-        similarities = sentence_vectors.dot(keyword_vector.T).toarray().flatten()
-
-        # Get top-ranked sentences
-        num_sentences = max(1, int(len(sentences) * (top_percent / 100)))
-        top_indices = np.argsort(similarities)[-num_sentences:][::-1]
-
-        top_sentences = [sentences[i] for i in sorted(top_indices)]
-        refined_content[keyword] = ". ".join(top_sentences)
+        refined_content[keyword] = " ".join(summaries)
 
     return refined_content
