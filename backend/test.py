@@ -5,13 +5,13 @@ import base64
 url = "http://127.0.0.1:5000/add"
 
 # Read the PDF file and encode it as a base64 string
-with open("interim/testfile.pdf", "rb") as pdf_file:
+with open("interim/leph101.pdf", "rb") as pdf_file:
     pdf_base64 = base64.b64encode(pdf_file.read()).decode('utf-8')
 
 # Sample data to send
 data = {
     "pdf": pdf_base64,  # Sending PDF as base64 string
-    "keywords": ["corrosion", "combination reaction"],
+    "keywords": ["electric dipole", "conductor","quantisation"],
     "userid": 1
 }
 
