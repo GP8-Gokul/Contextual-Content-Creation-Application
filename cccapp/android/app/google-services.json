@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "762028115986",
+    "firebase_url": "https://contextual-content-creation-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "contextual-content-creation",
+    "storage_bucket": "contextual-content-creation.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:762028115986:android:912cdf6671fc753054b0cb",
+        "android_client_info": {
+          "package_name": "com.example.cccapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBGyvyIQgQHvKiVTQLn8Qg17wMuM2ySZNI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
