@@ -3,7 +3,7 @@ from firebase_admin import credentials, db
 
 cred = credentials.Certificate("backend/key.json")
 firebase_admin.initialize_app(cred, {
-    'databaseURL': 'https://contextual-content-creation-default-rtdb.asia-southeast1.firebasedatabase.app'
+    'databaseURL': ''
 })
 
 def addidtouser(userid, s_id=None):
